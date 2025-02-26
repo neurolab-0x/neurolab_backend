@@ -1,4 +1,3 @@
-const logger = require('../logger');
 const { body, validationResult } = require('express-validator');
 const Patient = require('../models/patientModel');
 
