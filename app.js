@@ -4,7 +4,6 @@ const cors = require('cors');
 const path = require('path');
 const eegDataRoutes = require('./routes/eegData.routes');
 require('dotenv').config();
-require('./config/db.config');
 
 const app = express();
 
@@ -14,14 +13,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/eegdata', eegDataRoutes);
 // Handle 404 errors
 app.use((req, res, next) => {
-    res.status(404).json({ message: `Route ${req.url} Not Found` });
-  });
-  
+  res.status(404).json({ message: `Route ${req.url} Not Found` });
+});
+
 const PORT = process.env.PORT || 500
 
 app.listen(PORT, () => {
-    // connectToDB();
-    console.log(`server is running on port ${PORT}`);
+  // connectToDB();
+  require('./config/db.config');
+  console.log(`server is running on port ${PORT}`);
 })
 
 
