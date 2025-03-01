@@ -15,7 +15,7 @@ const patientSchema = new mongoose.Schema({
     },
     role : {
         type : String,
-        enum : ['doctor', 'patien'],
+        enum : ['doctor', 'patient'],
         default : "patient"
     },
     brainActivityData: {

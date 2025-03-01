@@ -1,13 +1,18 @@
 const { error } = require('console');
+require("dotenv").config()
 const EEGData = require('../models/eegData.model');
 const { parseCSV } = require('../utils/csvParser');
 const fs = require('fs');
 const path = require('path');
+const { MongoClient } = require("mongodb")
+const client = new MongoClient(process.env.MONGO_URI)
 // const EEGData = require('../models/eegData.model')
 
 const cloudinary = require('../config/cloudinary.config');
 const { resolve } = require('url');
 const { rejects } = require('assert');
+const myDB = client.db("neurolab");
+const NeuroColl = myDB.collection("neurolab-data");
 
 exports.createEEGData = async (req, res) => {
   try {
@@ -117,21 +122,22 @@ exports.uploadEEGData = async (req, res) => {
 
     console.log("Upload result:", uploadResult);
 
-    // Save to MongoDB
-    const newEEGData = new EEGData({
-      patientId,
-      dataUrl: uploadResult.secure_url,
-    });
+  const newEEGData = new EEGData({
+    patientId,
+    dataUrl: uploadResult.secure_url,
+    timestamp: uploadResult.created_at,
+  });
 
-    await newEEGData.save();
 
-    res.status(201).json({
-      message: "File uploaded and saved successfully",
-      dataUrl: uploadResult.secure_url,
-    });
+  await newEEGData.save();
+  console.log("ADDED TO DB SUCCESSFULLY!");
+
+  res.status(201).json({
+    message: "File uploaded and saved successfully",
+    dataUrl: uploadResult.secure_url,
+  });
 
   } catch (err) {
-    // Handle different error scenarios
     if (uploadResult) {
       console.error("Upload succeeded but DB save failed:", err.message);
       res.status(500).json({ 
@@ -147,7 +153,6 @@ exports.uploadEEGData = async (req, res) => {
       });
     }
   } finally {
-    // Only cleanup if using disk storage
     if (req.file?.path) {
       fs.unlink(req.file.path, (err) => {
         if (err) console.error('Error deleting file:', err.message);
@@ -156,3 +161,4 @@ exports.uploadEEGData = async (req, res) => {
     }
   }
 };
+
