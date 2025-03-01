@@ -3,8 +3,11 @@ const EEGData = require('../models/eegData.model');
 const { parseCSV } = require('../utils/csvParser');
 const fs = require('fs');
 const path = require('path');
+// const EEGData = require('../models/eegData.model')
 
 const cloudinary = require('../config/cloudinary.config');
+const { resolve } = require('url');
+const { rejects } = require('assert');
 
 exports.createEEGData = async (req, res) => {
   try {
@@ -67,6 +70,7 @@ exports.uploadCSV = async (req, res) => {
     await newEEGData.save();
     res.status(201).json({ message: 'EEG data uploaded and processed successfully' });
   } catch (err) {
+    
     console.error('Error uploading csv: ', err.message )
     res.status(500).json({ message: 'EEG data processing failed', error: err.message });
   } finally {
@@ -84,37 +88,71 @@ exports.uploadCSV = async (req, res) => {
 }
 
 exports.uploadEEGData = async (req, res) => {
-  try{
+  let uploadResult; // Declare outside try block for catch scope access
+
+  try {
     if (!req.file) {
-      return res.status(400).json({ message: "Please upload a csv or txt file" });
+      console.log("No file uploaded");
+      return res.status(400).json({ message: "Please upload a CSV or TXT file" });
     }
 
-    const filePath = req.file.path;
     const patientId = req.body.patientId;
+    const sanitizedPatientId = patientId.replace(/[^a-zA-Z0-9_-]/g, "_");
+    
+    console.log("Uploading to Cloudinary...");
+    const ext = path.extname(req.file.originalname) || ".tmp";
 
-    console.log("uploading to cloudinary....");
-    const uploadResult = await cloudinary.uploader.upload(filePath, {
-      resource_type: 'raw',
-      folder: 'eeg_data',
-      public_id: `${patientId}_${Date.now()}`,
+    // Upload to Cloudinary
+    uploadResult = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'raw',
+          folder: 'eeg_data',
+          public_id: `${sanitizedPatientId}_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`,
+        },
+        (error, result) => error ? reject(error) : resolve(result)
+      );
+      stream.end(req.file.buffer);
     });
 
-    console.log("Upload result: ", uploadResult);
+    console.log("Upload result:", uploadResult);
 
-    const newEEGData = new eegData({
+    // Save to MongoDB
+    const newEEGData = new EEGData({
       patientId,
       dataUrl: uploadResult.secure_url,
-    })
+    });
 
     await newEEGData.save();
 
     res.status(201).json({
-      message: "file uploaded and saved successfully",
+      message: "File uploaded and saved successfully",
       dataUrl: uploadResult.secure_url,
     });
 
   } catch (err) {
-    console.error("Error uploading eegData", err.message);
-    res.status(500).json({ message: "error uploading eeg data", error: err.message });
-  } finally {}
-}
+    // Handle different error scenarios
+    if (uploadResult) {
+      console.error("Upload succeeded but DB save failed:", err.message);
+      res.status(500).json({ 
+        message: "File uploaded to Cloudinary but failed to save record",
+        cloudinaryUrl: uploadResult.secure_url,
+        error: err.message
+      });
+    } else {
+      console.error("Upload failed completely:", err.message);
+      res.status(500).json({ 
+        message: "Failed to upload file", 
+        error: err.message 
+      });
+    }
+  } finally {
+    // Only cleanup if using disk storage
+    if (req.file?.path) {
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error('Error deleting file:', err.message);
+        else console.log('Temporary file cleaned up');
+      });
+    }
+  }
+};

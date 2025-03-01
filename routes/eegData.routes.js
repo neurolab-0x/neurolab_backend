@@ -9,4 +9,5 @@ router.get('/patient/:patientId', eegDataController.getEEGDataByPatient);
 router.delete('/:id', eegDataController.deleteEEGData);
 router.post('/upload', upload.single('file'), eegDataController.uploadEEGData);
 
+
 module.exports = router;

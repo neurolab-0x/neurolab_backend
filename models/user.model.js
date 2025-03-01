@@ -13,6 +13,11 @@ const patientSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    role : {
+        type : String,
+        enum : ['doctor', 'patien'],
+        default : "patient"
+    },
     brainActivityData: {
         type: Object,
         required: true,
@@ -23,4 +28,4 @@ const patientSchema = new mongoose.Schema({
     },
 });
 
-module.exports = mongoose.model('Patient', patientSchema);
+module.exports = mongoose.model('users', patientSchema);

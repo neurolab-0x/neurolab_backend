@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const eegDataRoutes = require('./routes/eegData.routes');
 require('dotenv').config();
+const connectToDB = require('./config/db.config.js')
 
 const app = express();
 
@@ -18,15 +19,10 @@ app.use((req, res, next) => {
 
 const PORT = process.env.PORT || 500
 
-app.listen(PORT, () => {
-  // connectToDB();
-  require('./config/db.config');
+app.listen(PORT, async () => {
+  // Start the server then connectToDB();
   console.log(`server is running on port ${PORT}`);
+  // await connectToDB()  
+  require("./config/db.config.js")
+  
 })
-
-
-
-
-
-
-
