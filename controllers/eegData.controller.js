@@ -130,7 +130,7 @@ exports.uploadEEGData = async (req, res) => {
 
 
   await newEEGData.save();
-  console.log("ADDED TO DB SUCCESSFULLY!");
+  console.log("Successfully added to database");
 
   res.status(201).json({
     message: "File uploaded and saved successfully",
