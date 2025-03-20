@@ -6,13 +6,11 @@ const signup = async (req, res) => {
     try {
         const { name, email, password, age, condition, role } = req.body;
         
-        // Check if user exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
 
         // Create user
@@ -25,8 +23,7 @@ const signup = async (req, res) => {
             role: role || 'patient' // Default to patient if not specified
         });
 
-        // Create token
-        const token = jwt.sign(
+         const token = jwt.sign(
             { email: user.email, id: user._id, role: user.role },
             process.env.JWT_SECRET,
             { expiresIn: '1h' }

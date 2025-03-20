@@ -9,6 +9,14 @@ const patientSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    email: {
+        type: String,
+        required: true,
+    },
+    password: {
+        type: String,
+        required: true,
+    },
     condition: {
         type: String,
         required: true,
@@ -20,7 +28,7 @@ const patientSchema = new mongoose.Schema({
     },
     brainActivityData: {
         type: Object,
-        required: true,
+        required: false,
     },
     createdAt: {
         type: Date,
