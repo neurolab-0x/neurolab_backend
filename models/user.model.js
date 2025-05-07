@@ -1,39 +1,15 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
-const patientSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-    },
-    age: {
-        type: Number,
-        required: true,
-    },
-    email: {
-        type: String,
-        required: true,
-    },
-    password: {
-        type: String,
-        required: true,
-    },
-    condition: {
-        type: String,
-        required: true,
-    },
-    role : {
-        type : String,
-        enum : ['doctor', 'patient'],
-        default : "patient"
-    },
-    brainActivityData: {
-        type: Object,
-        required: false,
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
-});
+const userSchema = new mongoose.Schema({
+    profilePicture : { type : String },
+    firstName : { type: String, required: true },
+    lastName : { type : String, required : true },
+    username : { type : String, required : true, unique : true },
+    email : { type : String, required : true, unique : true },
+    role : { type : String, enum : ["ADMIN", "USER", "TECHNICIAN"], default : "USER" },
+    password : { type : String, required : true }
+}, { timestamps : true });
 
-module.exports = mongoose.model('users', patientSchema);
+const User = mongoose.model('users', userSchema);
+
+export default User;
