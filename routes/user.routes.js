@@ -4,9 +4,9 @@ import { updateProfile, getProfile, deleteProfile, getUserById } from '../contro
 
 const user_router = express.Router();
 
-user_router.put('/profile/update',authenticate, updateProfile);
+user_router.put('/profile',authenticate, updateProfile);
 user_router.get('/profile', authenticate, getProfile);
-user_router.delete('/profile/delete', authenticate, deleteProfile);
+user_router.delete('/profile', authenticate, deleteProfile);
 user_router.get('/profile/:id', authenticate, getUserById);
 
 export default user_router;

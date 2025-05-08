@@ -9,11 +9,10 @@ export const register = async (req, res) => {
         if(existingUser) {
             return res.status(404).json({ message : "User already exist" });
         };
-        const hashedPassword = await bcrypt.hash(password, 20);
+        const hashedPassword = await bcrypt.hash(password, 12);
         const newUser = new User({ firstName, lastName, username, email, password: hashedPassword });
         await newUser.save();
         const { password: _, ...userWithoutPassword } = newUser.toObject();
-        console.log(userWithoutPassword);
         return res.status(200).json({ message : "Registration successfull", userWithoutPassword });
     } catch (error) {
         console.log(error.message);
