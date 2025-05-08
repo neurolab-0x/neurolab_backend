@@ -1,9 +1,13 @@
 import User from "../models/user.model.js";
 
 export const getProfile = async (req, res) => {
-  const { id } = req.user;
+  const { _id } = req.user;
   try {
-    return id;
+    const user = await User.findById(_id).select("-password -_version -createdAt -updatedAt");
+    if(!user){
+      console.log("User not found");
+    };
+    return res.status(200).json({ user });
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ message: "Internal Server error" });
@@ -11,7 +15,7 @@ export const getProfile = async (req, res) => {
 }
 
 export const updateProfile = async (req, res) => {
-  const { id } = req.user;
+  const { _id } = req.user;
   const { firstName, lastName, username, email } = req.body;
   try {
     const updatedUser = await User.findByIdAndUpdate(id, { firstName, lastName, username, email }, { new: true });
@@ -45,6 +49,7 @@ export const getUserById = async (req, res) => {
     return res.status(500).json({ message: "Internal Server error" });
   }
 }
+
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find();

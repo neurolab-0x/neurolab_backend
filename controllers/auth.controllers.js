@@ -7,7 +7,6 @@ export const register = async (req, res) => {
     try {
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if(existingUser) {
-            console.log(existingUser);
             return res.status(404).json({ message : "User already exist" });
         };
         const hashedPassword = await bcrypt.hash(password, 20);
