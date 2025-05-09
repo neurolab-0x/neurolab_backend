@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import User from '../models/user.model.js';
 dotenv.config();
 
 export const authenticate = (req, res, next) => {
@@ -17,7 +18,7 @@ export const authenticate = (req, res, next) => {
     }
 };
 
-export const authenticateAdmin = (req, res, next) => {
+export const authenticateAdmin = async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     if(!token){
         return res.status(404).json({ message : "Token not found" });
@@ -27,12 +28,19 @@ export const authenticateAdmin = (req, res, next) => {
         if(!decoded){
             return res.status(404).json({ message : "Token invalid or expired" });
         };
-        if(decoded.role !== "ADMIN"){
+        const user = await User.findById(decoded.id);
+        if(!user){
+            return res.status(404).json({ message : "User not found" });
+        }
+        
+        if(user.role !== "ADMIN"){
+            console.log(decoded)
             return res.status(403).json({ message : "Access denied" });
         };
         req.user = decoded;
         next();
     } catch (error) {
-        return res.status(500).json({ message : "Internal Server error" });
+        console.log(error.message)
+        return res.status(500).json({ message : "Error in auth middleware" });
     }
 }
