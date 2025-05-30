@@ -3,14 +3,14 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
-import authRoutes from './routes/auth.routes.js';
-import userRoutes from './routes/user.routes.js';
-import adminRoutes from './routes/admin.routes.js';
-import doctorRoutes from './routes/doctor.routes.js';
-import deviceRoutes from './routes/device.routes.js';
-import sessionRoutes from './routes/session.routes.js';
-import analysisRoutes from './routes/analysis.routes.js';
-import fileUploadRoutes from './routes/fileUpload.routes.js';
+import authRouter from './routes/auth.routes.js';
+import userRouter from './routes/user.routes.js';
+import adminRouter from './routes/admin.routes.js';
+import doctorRouter from './routes/doctor.routes.js';
+import deviceRouter from './routes/device.routes.js';
+import sessionRouter from './routes/session.routes.js';
+import analysisRouter from './routes/analysis.routes.js';
+import fileUploadRouter from './routes/fileUpload.routes.js';
 import { connectToDB } from './config/db.config.js';
 import { mqttService } from './config/mqtt/config.js';
 import { sessionManager } from './config/session-manager/config.js';
@@ -41,14 +41,14 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/doctors', doctorRoutes);
-app.use('/api/devices', deviceRoutes);
-app.use('/api/sessions', sessionRoutes);
-app.use('/api/analysis', analysisRoutes);
-app.use('/api/uploads', fileUploadRoutes);
+app.use('/api/auth', authRouter);
+app.use('/api/users', userRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/doctors', doctorRouter);
+app.use('/api/devices', deviceRouter);
+app.use('/api/sessions', sessionRouter);
+app.use('/api/analysis', analysisRouter);
+app.use('/api/uploads', fileUploadRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -80,7 +80,7 @@ async function initializeServices() {
         await connectToDB();
 
         // Initialize MQTT service
-        await mqttService.initialize();
+        //await mqttService.initialize();
 
         // Initialize data processor
         await dataProcessor.initialize();
@@ -106,9 +106,9 @@ process.on('SIGTERM', async () => {
     console.log('🛑 SIGTERM received. Shutting down gracefully...');
 
     try {
-        await mqttService.shutdown();
-        await dataProcessor.shutdown();
-        await sessionManager.shutdown();
+        //await mqttService.shutdown();
+        //await dataProcessor.shutdown();
+        //await sessionManager.shutdown();
 
         console.log('✅ All services shut down successfully');
         process.exit(0);

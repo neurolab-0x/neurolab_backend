@@ -4,7 +4,7 @@ import { fileUploadController } from '../controllers/fileUpload.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { uploadToCloudinary } from '../middleware/cloudinary.middleware.js';
 
-const router = express.Router();
+const fileUploadRouter = express.Router();
 
 // Configure multer for temporary storage
 const upload = multer({
@@ -33,16 +33,16 @@ const upload = multer({
 });
 
 // Apply authentication middleware to all routes
-router.use(authenticate);
+fileUploadRouter.use(authenticate);
 
 // File upload routes
-router.post('/upload',
+fileUploadRouter.post('/upload',
   upload.single('file'),
   uploadToCloudinary,
   fileUploadController.uploadFile
 );
-router.get('/', fileUploadController.getUserUploads);
-router.get('/:uploadId', fileUploadController.getUploadStatus);
-router.delete('/:uploadId', fileUploadController.deleteUpload);
+fileUploadRouter.get('/', fileUploadController.getUserUploads);
+fileUploadRouter.get('/:uploadId', fileUploadController.getUploadStatus);
+fileUploadRouter.delete('/:uploadId', fileUploadController.deleteUpload);
 
-export default router; 
+export default fileUploadRouter; 

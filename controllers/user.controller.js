@@ -1,11 +1,15 @@
 import User from '../models/user.models.js';
 import bcrypt from 'bcryptjs';
 import { deleteImage, getImageUrl } from '../utils/image.upload.js';
+import { logger } from '../config/logger/config.js';
 
 // Get user profile
 export const getProfile = async (req, res) => {
+  const { userId } = req.user;
+  console.log(userId);
   try {
-    const user = await User.findById(req.user._id).select('-password -refreshToken');
+    const user = await User.findById(userId).select('-password -refreshToken');
+    logger.info(`User profile fetched for user ${userId}`);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -17,6 +21,7 @@ export const getProfile = async (req, res) => {
 
 // Update user profile
 export const updateProfile = async (req, res) => {
+  const { userId } = req.user;
   try {
     const { fullName, username, email } = req.body;
     const updates = {};
@@ -29,7 +34,7 @@ export const updateProfile = async (req, res) => {
     // Handle avatar upload
     if (req.file) {
       // Delete old avatar if exists
-      const currentUser = await User.findById(req.user._id);
+      const currentUser = await User.findById(userId);
       if (currentUser.avatar && currentUser.avatar.includes('cloudinary')) {
         const publicId = currentUser.avatar.split('/').slice(-1)[0].split('.')[0];
         await deleteImage(publicId);
@@ -41,10 +46,10 @@ export const updateProfile = async (req, res) => {
     if (username || email) {
       const existingUser = await User.findOne({
         $or: [
-          { username: username || req.user.username },
-          { email: email || req.user.email }
+          { username: username || currentUser.username },
+          { email: email || currentUser.email }
         ],
-        _id: { $ne: req.user._id }
+        _id: { $ne: userId }
       });
 
       if (existingUser) {
@@ -53,7 +58,7 @@ export const updateProfile = async (req, res) => {
     }
 
     const user = await User.findOneAndUpdate(
-      { _id: req.user._id },
+      { _id: userId },
       { $set: updates },
       {
         new: true,
@@ -77,10 +82,11 @@ export const updateProfile = async (req, res) => {
 
 // Change password
 export const changePassword = async (req, res) => {
+  const { userId } = req.user;
   try {
     const { currentPassword, newPassword } = req.body;
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -97,7 +103,7 @@ export const changePassword = async (req, res) => {
 
     // Update password without validation
     await User.findOneAndUpdate(
-      { _id: req.user._id },
+      { _id: userId },
       { $set: { password: hashedPassword } },
       { runValidators: false }
     );
@@ -110,10 +116,11 @@ export const changePassword = async (req, res) => {
 
 // Delete account
 export const deleteAccount = async (req, res) => {
+  const { userId } = req.user;
   try {
     const { password } = req.body;
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -130,7 +137,7 @@ export const deleteAccount = async (req, res) => {
       await deleteImage(publicId);
     }
 
-    await User.findByIdAndDelete(req.user._id);
+    await User.findByIdAndDelete(userId);
     res.json({ message: 'Account deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting account', error: error.message });

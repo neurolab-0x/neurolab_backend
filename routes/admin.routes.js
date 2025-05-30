@@ -7,16 +7,16 @@ import {
   deleteUser
 } from '../controllers/admin.controller.js';
 
-const router = express.Router();
+const adminRouter = express.Router();
 
 // All routes require admin role
-router.use(verifyToken);
-router.use(checkRole('admin'));
+adminRouter.use(verifyToken);
+adminRouter.use(checkRole('admin'));
 
 // Admin routes
-router.get('/users', getAllUsers);
-router.post('/admins', createAdmin);
-router.patch('/users/:userId/role', updateUserRole);
-router.delete('/users/:userId', deleteUser);
+adminRouter.get('/users', getAllUsers);
+adminRouter.post('/admins', createAdmin);
+adminRouter.patch('/users/:userId/role', updateUserRole);
+adminRouter.delete('/users/:userId', deleteUser);
 
-export default router; 
+export default adminRouter; 

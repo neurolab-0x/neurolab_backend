@@ -2,20 +2,20 @@ import express from 'express';
 import { analysisController } from '../controllers/analysis.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 
-const router = express.Router();
+const analysisRouter = express.Router();
 
 // Apply authentication middleware to all routes
-router.use(authenticate);
+analysisRouter.use(authenticate);
 
 // Analysis management routes
-router.post('/', analysisController.createAnalysis);
-router.get('/user', analysisController.getUserAnalyses);
-router.get('/device/:deviceId', analysisController.getDeviceAnalyses);
-router.get('/session/:sessionId', analysisController.getSessionAnalyses);
-router.get('/:analysisId', analysisController.getAnalysis);
-router.put('/:analysisId/status', analysisController.updateAnalysisStatus);
+analysisRouter.post('/', analysisController.createAnalysis);
+analysisRouter.get('/user', analysisController.getUserAnalyses);
+analysisRouter.get('/device/:deviceId', analysisController.getDeviceAnalyses);
+analysisRouter.get('/session/:sessionId', analysisController.getSessionAnalyses);
+analysisRouter.get('/:analysisId', analysisController.getAnalysis);
+analysisRouter.put('/:analysisId/status', analysisController.updateAnalysisStatus);
 
 // Buffer status route
-router.get('/device/:deviceId/buffer', analysisController.getBufferStatus);
+analysisRouter.get('/device/:deviceId/buffer', analysisController.getBufferStatus);
 
-export default router; 
+export default analysisRouter; 

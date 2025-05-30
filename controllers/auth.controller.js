@@ -1,19 +1,19 @@
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.models.js';
+import { logger } from '../config/logger/config.js';
 
 // Generate tokens
 const generateTokens = (userId) => {
   const accessToken = jwt.sign(
     { userId },
-    process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+    process.env.ACCESS_TOKEN_SECRET || 'secret321',
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '1d' }
   );
 
   const refreshToken = jwt.sign(
     { userId },
-    process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
+    process.env.REFRESH_TOKEN_SECRET || 'secret123',
+    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '1d' }
   );
 
   return { accessToken, refreshToken };
@@ -30,16 +30,12 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     // Create user with default avatar if not provided
     const user = await User.create({
       fullName,
       username,
       email,
-      password: hashedPassword,
+      password,
       avatar: avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fullName)
     });
 
@@ -72,15 +68,25 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({
+        message: 'Email and password are required'
+      });
+    }
+
     // Find user and explicitly select password
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select("+password");
+
     if (!user) {
+      logger.info(`Login attempt failed: User not found for email ${email}`);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Use the model's comparePassword method
+    const isMatch = await user.comparePassword(password);
+
     if (!isMatch) {
+      logger.info(`Login attempt failed: Invalid password for user ${email}`);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -88,17 +94,13 @@ export const login = async (req, res) => {
     const { accessToken, refreshToken } = generateTokens(user._id);
 
     // Update user without validation
-    await User.findOneAndUpdate(
-      { _id: user._id },
-      {
-        $set: {
-          refreshToken,
-          lastLogin: new Date()
-        }
-      },
-      { runValidators: false }
-    );
-    res.json({
+    user.lastLogin = new Date();
+    user.refreshToken = refreshToken; // Store refresh token
+    await user.save();
+
+    logger.info(`User ${email} logged in successfully`);
+
+    return res.json({
       message: 'Login successful',
       accessToken,
       refreshToken,
@@ -111,7 +113,11 @@ export const login = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error logging in', error: error.message });
+    logger.error('Login error:', error);
+    return res.status(500).json({
+      message: 'Error logging in',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 };
 

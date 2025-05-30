@@ -7,16 +7,17 @@ import {
   deleteAccount
 } from '../controllers/user.controller.js';
 import { uploadAvatar, handleUploadError } from '../utils/image.upload.js';
+import { authorize } from '../middleware/auth.middleware.js';
 
-const router = express.Router();
+const userRouter = express.Router();
 
 // All routes require authentication
-router.use(verifyToken);
+userRouter.use(authorize);
 
 // Profile management routes
-router.get('/me', getProfile);
-router.patch('/me', uploadAvatar, handleUploadError, updateProfile);
-router.post('/me/password', changePassword);
-router.delete('/me', deleteAccount);
+userRouter.get('/me', getProfile);
+userRouter.patch('/me', uploadAvatar, handleUploadError, updateProfile);
+userRouter.post('/me/password', changePassword);
+userRouter.delete('/me', deleteAccount);
 
-export default router;
+export default userRouter;

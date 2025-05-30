@@ -1,11 +1,11 @@
 import jwt from 'jsonwebtoken';
 import { logger } from '../config/logger/config.js';
-import User from '../models/user.models.js';
 
 // Middleware to verify JWT token
 export const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
+    logger.info(`Authentication header: ${authHeader}`);
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
@@ -25,6 +25,7 @@ export const authenticate = async (req, res, next) => {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      logger.info(`Decoded token: ${decoded}`);
       req.user = decoded;
       next();
     } catch (error) {

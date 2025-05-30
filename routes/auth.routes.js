@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { signup, login, refresh, logout } from '../controllers/auth.controller.js';
 import { verifyToken } from '../middleware/auth.middleware.js';
 
-const router = express.Router();
+const authRouter = express.Router();
 
 // Rate limiting
 const authLimiter = rateLimit({
@@ -13,9 +13,9 @@ const authLimiter = rateLimit({
 });
 
 // Routes
-router.post('/signup', authLimiter, signup);
-router.post('/login', authLimiter, login);
-router.post('/refresh', refresh);
-router.post('/logout', verifyToken, logout);
+authRouter.post('/register', authLimiter, signup);
+authRouter.post('/login', authLimiter, login);
+authRouter.post('/refresh', refresh);
+authRouter.post('/logout', verifyToken, logout);
 
-export default router;
+export default authRouter;
