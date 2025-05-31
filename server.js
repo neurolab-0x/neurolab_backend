@@ -22,7 +22,7 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:8080',
+    origin: process.env.CORS_ORIGIN || '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -107,8 +107,8 @@ process.on('SIGTERM', async () => {
 
     try {
         //await mqttService.shutdown();
-        //await dataProcessor.shutdown();
-        //await sessionManager.shutdown();
+        await dataProcessor.shutdown();
+        await sessionManager.shutdown();
 
         console.log('✅ All services shut down successfully');
         process.exit(0);
