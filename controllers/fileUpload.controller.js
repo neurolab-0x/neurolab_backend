@@ -2,7 +2,6 @@ import { fileUploadService } from '../config/file-upload/config.js';
 import { loggerService } from '../config/logger/config.js';
 
 export const fileUploadController = {
-  // Upload a new file
   async uploadFile(req, res) {
     try {
       if (!req.file) {
@@ -18,8 +17,6 @@ export const fileUploadController = {
         req.user._id,
         req.cloudinary
       );
-
-      // Process file asynchronously
       fileUploadService.processFile(fileUpload._id).catch(error => {
         loggerService.error('Error processing file', {
           fileUploadId: fileUpload._id,
@@ -37,7 +34,6 @@ export const fileUploadController = {
     }
   },
 
-  // Get all uploads for the current user
   async getUserUploads(req, res) {
     try {
       const uploads = await fileUploadService.getUserUploads(req.user._id);
@@ -51,7 +47,6 @@ export const fileUploadController = {
     }
   },
 
-  // Get status of a specific upload
   async getUploadStatus(req, res) {
     try {
       const upload = await fileUploadService.getUploadStatus(req.params.uploadId);
@@ -75,7 +70,6 @@ export const fileUploadController = {
     }
   },
 
-  // Delete an upload
   async deleteUpload(req, res) {
     try {
       const result = await fileUploadService.deleteUpload(

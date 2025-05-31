@@ -3,12 +3,10 @@ import { Session } from '../models/session.models.js';
 import { dataProcessor } from '../config/data-processor/config.js';
 
 export const analysisController = {
-  // Create a new analysis
   async createAnalysis(req, res) {
     try {
       const { sessionId, results, metadata } = req.body;
 
-      // Check if session exists and belongs to user
       const session = await Session.findOne({
         _id: sessionId,
         userId: req.user._id
@@ -33,7 +31,6 @@ export const analysisController = {
     }
   },
 
-  // Get all analyses for a session
   async getSessionAnalyses(req, res) {
     try {
       const analyses = await Analysis.findSessionAnalyses(req.params.sessionId);
@@ -43,7 +40,6 @@ export const analysisController = {
     }
   },
 
-  // Get a specific analysis
   async getAnalysis(req, res) {
     try {
       const analysis = await Analysis.findOne({
@@ -61,7 +57,6 @@ export const analysisController = {
     }
   },
 
-  // Update analysis status
   async updateAnalysisStatus(req, res) {
     try {
       const { status, error } = req.body;
@@ -86,7 +81,6 @@ export const analysisController = {
     }
   },
 
-  // Get user's analyses
   async getUserAnalyses(req, res) {
     try {
       const analyses = await Analysis.findUserAnalyses(req.user._id);
@@ -96,7 +90,6 @@ export const analysisController = {
     }
   },
 
-  // Get device's analyses
   async getDeviceAnalyses(req, res) {
     try {
       const analyses = await Analysis.findDeviceAnalyses(req.params.deviceId);
@@ -106,7 +99,6 @@ export const analysisController = {
     }
   },
 
-  // Get buffer status for a device
   async getBufferStatus(req, res) {
     try {
       const status = dataProcessor.getBufferStatus(req.params.deviceId);

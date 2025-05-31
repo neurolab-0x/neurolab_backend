@@ -10,6 +10,8 @@ import doctorRouter from './routes/doctor.routes.js';
 import deviceRouter from './routes/device.routes.js';
 import sessionRouter from './routes/session.routes.js';
 import analysisRouter from './routes/analysis.routes.js';
+import reviewRouter from './routes/review.routes.js';
+import partnershipRouter from './routes/partnership.routes.js';
 import fileUploadRouter from './routes/fileUpload.routes.js';
 import { connectToDB } from './config/db.config.js';
 import { mqttService } from './config/mqtt/config.js';
@@ -37,6 +39,17 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use('/api/auth', authRouter);
+app.use('/api/users', userRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/doctors', doctorRouter);
+app.use('/api/devices', deviceRouter);
+app.use('/api/sessions', sessionRouter);
+app.use('/api/analysis', analysisRouter);
+app.use('/api/reviews', reviewRouter);
+app.use('/api/uploads', fileUploadRouter);
+app.use('/api/partnerships', partnershipRouter);
+
 // Rate limiter configuration
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -50,14 +63,6 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Routes
-app.use('/api/auth', authRouter);
-app.use('/api/users', userRouter);
-app.use('/api/admin', adminRouter);
-app.use('/api/doctors', doctorRouter);
-app.use('/api/devices', deviceRouter);
-app.use('/api/sessions', sessionRouter);
-app.use('/api/analysis', analysisRouter);
-app.use('/api/uploads', fileUploadRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

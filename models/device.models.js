@@ -14,12 +14,12 @@ const deviceSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['eeg', 'eeg_plus', 'research']
+    enum: ['EEG', 'EEG_PLUS', 'RESEARCH']
   },
   status: {
     type: String,
-    enum: ['active', 'inactive', 'maintenance'],
-    default: 'active'
+    enum: ['ACTIVE', 'INACTIVE', 'MAINTENANCE'],
+    default: 'ACTIVE'
   },
   metadata: {
     firmwareVersion: String,
@@ -84,7 +84,7 @@ deviceSchema.methods.assignToUser = function (userId) {
 
 // Static methods
 deviceSchema.statics.findActiveDevices = function () {
-  return this.find({ status: 'active' });
+  return this.find({ status: 'ACTIVE' });
 };
 
 deviceSchema.statics.findUserDevices = function (userId) {

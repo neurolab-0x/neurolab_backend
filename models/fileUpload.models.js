@@ -22,8 +22,8 @@ const fileUploadSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['uploading', 'processing', 'completed', 'failed'],
-    default: 'uploading'
+    enum: ['UPLOADING', 'PROCESSING', 'COMPLETED', 'FAILED'],
+    default: 'UPLOADING'
   },
   analysisResults: {
     type: mongoose.Schema.Types.Mixed
@@ -55,18 +55,18 @@ fileUploadSchema.index({ 'metadata.cloudinaryId': 1 });
 
 // Methods
 fileUploadSchema.methods.markAsProcessing = function () {
-  this.status = 'processing';
+  this.status = 'PROCESSING';
   return this.save();
 };
 
 fileUploadSchema.methods.markAsCompleted = function (results) {
-  this.status = 'completed';
+  this.status = 'COMPLETED';
   this.analysisResults = results;
   return this.save();
 };
 
 fileUploadSchema.methods.markAsFailed = function (error) {
-  this.status = 'failed';
+  this.status = 'FAILED';
   this.error = error;
   return this.save();
 };

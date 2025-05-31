@@ -36,8 +36,8 @@ const analysisSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['processing', 'completed', 'failed'],
-    default: 'processing'
+    enum: ['PROCESSING', 'COMPLETED', 'FAILED'],
+    default: 'PROCESSING'
   },
   error: {
     message: String,
@@ -55,12 +55,12 @@ analysisSchema.index({ userId: 1, timestamp: -1 });
 
 // Methods
 analysisSchema.methods.markAsCompleted = function () {
-  this.status = 'completed';
+  this.status = 'COMPLETED';
   return this.save();
 };
 
 analysisSchema.methods.markAsFailed = function (error) {
-  this.status = 'failed';
+  this.status = 'FAILED';
   this.error = error;
   return this.save();
 };
@@ -80,9 +80,7 @@ analysisSchema.statics.findDeviceAnalyses = function (deviceId) {
 
 // Virtual for formatted results
 analysisSchema.virtual('formattedResults').get(function () {
-  if (this.status !== 'completed') return null;
-
-  // Add any result formatting logic here
+  if (this.status !== 'COMPLETED') return null;
   return this.results;
 });
 

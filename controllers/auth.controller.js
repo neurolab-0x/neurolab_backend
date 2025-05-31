@@ -1,8 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/user.models.js';
-import { logger } from '../config/logger/config.js';
 
-// Generate tokens
 const generateTokens = (userId) => {
   const accessToken = jwt.sign(
     { userId },
@@ -19,30 +17,33 @@ const generateTokens = (userId) => {
   return { accessToken, refreshToken };
 };
 
-// Signup
 export const signup = async (req, res) => {
   try {
-    const { fullName, username, email, password, avatar } = req.body;
+    const { fullName, username, email, password, avatar, role } = req.body;
 
-    // Check if user exists
+    if (!fullName || !username || !email || !password) {
+      return res.status(400).json({
+        message: 'Missing required fields',
+        required: ['fullName', 'username', 'email', 'password']
+      });
+    }
+
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create user with default avatar if not provided
     const user = await User.create({
       fullName,
       username,
       email,
       password,
+      role: role ? role : 'USER',
       avatar: avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fullName)
     });
 
-    // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user._id);
 
-    // Save refresh token
     user.refreshToken = refreshToken;
     await user.save();
 
@@ -59,11 +60,13 @@ export const signup = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating user', error: error.message });
+    res.status(500).json({
+      message: 'Error creating user',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 };
 
-// Login
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -74,31 +77,30 @@ export const login = async (req, res) => {
       });
     }
 
-    // Find user and explicitly select password
     const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
-      logger.info(`Login attempt failed: User not found for email ${email}`);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Use the model's comparePassword method
     const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {
-      logger.info(`Login attempt failed: Invalid password for user ${email}`);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user._id);
 
-    // Update user without validation
-    user.lastLogin = new Date();
-    user.refreshToken = refreshToken; // Store refresh token
-    await user.save();
-
-    logger.info(`User ${email} logged in successfully`);
+    await User.findByIdAndUpdate(
+      user._id,
+      {
+        $set: {
+          lastLogin: new Date(),
+          refreshToken: refreshToken
+        }
+      },
+      { new: true, runValidators: false }
+    );
 
     return res.json({
       message: 'Login successful',
@@ -113,7 +115,6 @@ export const login = async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('Login error:', error);
     return res.status(500).json({
       message: 'Error logging in',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
@@ -121,7 +122,6 @@ export const login = async (req, res) => {
   }
 };
 
-// Refresh token
 export const refresh = async (req, res) => {
   try {
     const { refreshToken } = req.body;
@@ -129,7 +129,6 @@ export const refresh = async (req, res) => {
       return res.status(401).json({ message: 'Refresh token required' });
     }
 
-    // Verify refresh token
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     const user = await User.findById(decoded.userId);
 
@@ -137,10 +136,8 @@ export const refresh = async (req, res) => {
       return res.status(401).json({ message: 'Invalid refresh token' });
     }
 
-    // Generate new tokens
     const tokens = generateTokens(user._id);
 
-    // Update refresh token
     user.refreshToken = tokens.refreshToken;
     await user.save();
 
@@ -153,7 +150,6 @@ export const refresh = async (req, res) => {
   }
 };
 
-// Logout
 export const logout = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);

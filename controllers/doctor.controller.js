@@ -1,7 +1,6 @@
 import User from '../models/user.models.js';
 import Doctor from '../models/doctor.models.js';
 
-// Get doctor profile
 export const getProfile = async (req, res) => {
   try {
     const doctor = await Doctor.findOne({ user: req.user._id })
@@ -18,7 +17,6 @@ export const getProfile = async (req, res) => {
   }
 };
 
-// Update doctor profile
 export const updateProfile = async (req, res) => {
   try {
     const {
@@ -58,7 +56,6 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-// Add certification
 export const addCertification = async (req, res) => {
   try {
     const { name, issuingBody, dateIssued, expiryDate } = req.body;
@@ -92,12 +89,10 @@ export const addCertification = async (req, res) => {
   }
 };
 
-// Assign patient
 export const assignPatient = async (req, res) => {
   try {
     const { patientId } = req.body;
 
-    // Check if patient exists
     const patient = await User.findById(patientId);
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
@@ -130,7 +125,6 @@ export const assignPatient = async (req, res) => {
   }
 };
 
-// Update patient status
 export const updatePatientStatus = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -162,7 +156,6 @@ export const updatePatientStatus = async (req, res) => {
   }
 };
 
-// Get all patients
 export const getPatients = async (req, res) => {
   try {
     const doctor = await Doctor.findOne({ user: req.user._id })

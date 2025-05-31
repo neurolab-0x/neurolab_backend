@@ -14,8 +14,8 @@ const sessionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'ended', 'paused'],
-    default: 'active'
+    enum: ['ACTIVE', 'ENDED', 'PAUSED'],
+    default: 'ACTIVE'
   },
   startedAt: {
     type: Date,
@@ -42,14 +42,12 @@ const sessionSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Indexes for better query performance
 sessionSchema.index({ deviceId: 1, status: 1 });
 sessionSchema.index({ userId: 1, status: 1 });
 sessionSchema.index({ startedAt: -1 });
 
-// Methods
 sessionSchema.methods.endSession = function () {
-  this.status = 'ended';
+  this.status = 'ENDED';
   this.endedAt = new Date();
   return this.save();
 };
@@ -62,9 +60,8 @@ sessionSchema.methods.addAnalysisResult = function (result) {
   return this.save();
 };
 
-// Static methods
 sessionSchema.statics.findActiveSessions = function () {
-  return this.find({ status: 'active' });
+  return this.find({ status: 'ACTIVE' });
 };
 
 sessionSchema.statics.findUserSessions = function (userId) {

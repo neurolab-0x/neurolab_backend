@@ -12,14 +12,12 @@ export const uploadToCloudinary = async (req, res, next) => {
       fileSize: req.file.size
     });
 
-    // Upload to Cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
       resource_type: 'raw',
       folder: 'eeg_uploads',
       public_id: `${Date.now()}-${req.file.originalname.split('.')[0]}`
     });
 
-    // Add Cloudinary info to request
     req.cloudinary = {
       url: result.secure_url,
       publicId: result.public_id,

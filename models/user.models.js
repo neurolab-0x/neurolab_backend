@@ -8,19 +8,16 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: [true, 'Email is required'], unique: true, lowercase: true, validate: [validator.isEmail, 'Please provide a valid email'] },
   password: { type: String, required: [true, 'Password is required'], minlength: [8, 'Password must be at least 8 characters long'], select: false },
   avatar: { type: String, default: 'default-avatar.png' },
-  role: { type: String, enum: ['user', 'admin', 'researcher', 'participant'], default: 'user' },
+  role: { type: String, enum: ['USER', 'ADMIN', 'DOCTOR'], default: 'user' },
   isActive: { type: Boolean, default: true },
   lastLogin: { type: Date },
-  // Common fields for all users
   phone: { type: String, validate: [validator.isMobilePhone, 'Please provide a valid phone number'] },
   address: { street: String, city: String, state: String, country: String, zipCode: String },
   refreshToken: { type: String, select: false }
 }, { timestamps: true });
 
-// Indexes
 userSchema.index({ role: 1 });
 
-// Password hashing middleware
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
 
@@ -33,7 +30,6 @@ userSchema.pre('save', async function (next) {
   }
 });
 
-// Method to compare passwords
 userSchema.methods.comparePassword = async function (candidatePassword) {
   try {
     return await bcrypt.compare(candidatePassword, this.password);
@@ -42,15 +38,14 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   }
 };
 
-// Method to get role-specific profile
 userSchema.methods.getRoleProfile = async function () {
   switch (this.role) {
-    case 'admin':
-      return await mongoose.model('Admin').findOne({ user: this._id });
-    case 'researcher':
-      return await mongoose.model('Researcher').findOne({ user: this._id });
-    case 'participant':
-      return await mongoose.model('Participant').findOne({ user: this._id });
+    case 'ADMIN':
+      return await mongoose.model('ADMIN').findOne({ user: this._id });
+    case 'DOCTOR':
+      return await mongoose.model('DOCTOR').findOne({ user: this._id });
+    case 'USER':
+      return await mongoose.model('USER').findOne({ user: this._id });
     default:
       return null;
   }

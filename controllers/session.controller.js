@@ -3,12 +3,10 @@ import { Device } from '../models/device.models.js';
 import { sessionManager } from '../config/session-manager/config.js';
 
 export const sessionController = {
-  // Create a new session
   async createSession(req, res) {
     try {
       const { deviceId } = req.body;
 
-      // Check if device exists and is owned by user
       const device = await Device.findOne({
         deviceId,
         owner: req.user._id
@@ -18,7 +16,6 @@ export const sessionController = {
         return res.status(404).json({ message: 'Device not found' });
       }
 
-      // Create session in database
       const session = new Session({
         deviceId,
         userId: req.user._id,
@@ -31,7 +28,6 @@ export const sessionController = {
       });
       await session.save();
 
-      // Create session in session manager
       await sessionManager.createUserSession(req.user._id, deviceId);
 
       res.status(201).json(session);
@@ -40,7 +36,6 @@ export const sessionController = {
     }
   },
 
-  // Get all sessions for the current user
   async getUserSessions(req, res) {
     try {
       const sessions = await Session.findUserSessions(req.user._id);
@@ -50,7 +45,6 @@ export const sessionController = {
     }
   },
 
-  // Get a specific session
   async getSession(req, res) {
     try {
       const session = await Session.findOne({
@@ -68,7 +62,6 @@ export const sessionController = {
     }
   },
 
-  // End a session
   async endSession(req, res) {
     try {
       const session = await Session.findOne({
@@ -80,10 +73,8 @@ export const sessionController = {
         return res.status(404).json({ message: 'Session not found' });
       }
 
-      // End session in database
       await session.endSession();
 
-      // End session in session manager
       await sessionManager.endUserSession(req.user._id);
 
       res.json(session);
@@ -92,7 +83,6 @@ export const sessionController = {
     }
   },
 
-  // Get active sessions
   async getActiveSessions(req, res) {
     try {
       const sessions = await Session.findActiveSessions();
@@ -102,7 +92,6 @@ export const sessionController = {
     }
   },
 
-  // Get session analysis results
   async getSessionResults(req, res) {
     try {
       const session = await Session.findOne({
@@ -120,7 +109,6 @@ export const sessionController = {
     }
   },
 
-  // Add analysis result to session
   async addAnalysisResult(req, res) {
     try {
       const session = await Session.findOne({

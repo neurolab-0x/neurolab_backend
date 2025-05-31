@@ -28,4 +28,4 @@ doctorRouter.get('/patients', getPatients);
 doctorRouter.post('/patients/assign', assignPatient);
 doctorRouter.patch('/patients/:patientId/status', updatePatientStatus);
 
-export default doctorRouter; 
+export default doctorRouter;

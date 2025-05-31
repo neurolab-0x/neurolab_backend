@@ -2,7 +2,6 @@ import { Device } from '../models/device.models.js';
 import { mqttService } from '../config/mqtt/config.js';
 
 export const deviceController = {
-  // Create a new device
   async createDevice(req, res) {
     try {
       const device = new Device({
@@ -16,7 +15,6 @@ export const deviceController = {
     }
   },
 
-  // Get all devices for the current user
   async getUserDevices(req, res) {
     try {
       const devices = await Device.findUserDevices(req.user._id);
@@ -26,7 +24,6 @@ export const deviceController = {
     }
   },
 
-  // Get a specific device
   async getDevice(req, res) {
     try {
       const device = await Device.findOne({
@@ -44,7 +41,6 @@ export const deviceController = {
     }
   },
 
-  // Update device settings
   async updateDevice(req, res) {
     try {
       const device = await Device.findOne({
@@ -65,7 +61,6 @@ export const deviceController = {
     }
   },
 
-  // Assign device to another user
   async assignDevice(req, res) {
     try {
       const device = await Device.findOne({
@@ -84,7 +79,6 @@ export const deviceController = {
     }
   },
 
-  // Get device status
   async getDeviceStatus(req, res) {
     try {
       const device = await Device.findOne({
@@ -106,7 +100,6 @@ export const deviceController = {
     }
   },
 
-  // Get all active devices
   async getActiveDevices(req, res) {
     try {
       const devices = await Device.findActiveDevices();
@@ -116,7 +109,6 @@ export const deviceController = {
     }
   },
 
-  // Delete device
   async deleteDevice(req, res) {
     try {
       const device = await Device.findOneAndDelete({
