@@ -1,6 +1,5 @@
 import cloudinary from 'cloudinary';
 import dotenv from 'dotenv';
-import { logger } from './logger/config.js';
 dotenv.config();
 
 // Check if environment variables are loaded
@@ -21,9 +20,5 @@ cloudinary.v2.config({
   api_key: apiKey,
   api_secret: apiSecret
 });
-
-// Verify configuration
-console.log('Cloudinary configured with cloud name:', cloudName);
-console.log(`Cloudinary detais : ${apiKey}\n ${apiSecret}`)
 
 export default cloudinary.v2;
