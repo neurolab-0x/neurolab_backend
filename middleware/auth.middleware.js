@@ -21,7 +21,7 @@ export const authenticate = async (req, res, next) => {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
       req.user = decoded;
       next();
     } catch (error) {
@@ -40,6 +40,7 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
+// Middleware to check if user is authenticated and has required role
 export const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -49,7 +50,7 @@ export const authorize = (...roles) => {
       });
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (roles.length > 0 && !roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
         message: 'Insufficient permissions'
@@ -69,8 +70,18 @@ export const verifyToken = (req, res, next) => {
 
 export const checkRole = (...roles) => {
   return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
+      return res.status(403).json({
+        success: false,
+        message: 'Insufficient permissions'
+      });
     }
     next();
   };

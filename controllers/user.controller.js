@@ -5,17 +5,35 @@ import { logger } from '../config/logger/config.js';
 
 // Get user profile
 export const getProfile = async (req, res) => {
-  const { userId } = req.user;
-  console.log(userId);
   try {
-    const user = await User.findById(userId).select('-password -refreshToken');
-    logger.info(`User profile fetched for user ${userId}`);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    const userId = req.user.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: 'User ID not found in token'
+      });
     }
-    res.json(user);
+
+    const user = await User.findById(userId).select('-password -refreshToken');
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+
+    logger.info(`User profile fetched for user ${userId}`);
+
+    res.json({
+      success: true,
+      user
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching profile', error: error.message });
+    logger.error('Error fetching profile:', error);
+    res.status(500).json({
+      message: 'Error fetching profile',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 };
 
