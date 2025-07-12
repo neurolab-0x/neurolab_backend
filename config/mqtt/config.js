@@ -29,7 +29,7 @@ class MQTTService {
         keepalive: 60,
         will: {
           topic: 'devices/backend/status',
-          payload: 'offline',
+          payload: JSON.stringify({ status: 'offline' }),
           qos: 1,
           retain: true
         }
@@ -98,7 +98,7 @@ class MQTTService {
 
   publishStatus(status) {
     if (this.isConnected) {
-      this.publish('devices/backend/status', status);
+      this.publish('devices/backend/status', { status });
     }
   }
 
@@ -113,8 +113,6 @@ class MQTTService {
       this.client.subscribe(topic, (err) => {
         if (err) {
           logger.error(`Failed to subscribe to ${topic}:`, err);
-        } else {
-          logger.info(`Subscribed to ${topic}`);
         }
       });
     });
@@ -136,8 +134,6 @@ class MQTTService {
         };
       }
 
-      logger.info(`Received message on ${topic}:`, payload);
-
       // Handle different message types based on topic
       if (topic.includes('/status')) {
         this.handleStatusUpdate(topic, payload);
@@ -153,13 +149,18 @@ class MQTTService {
 
   handleStatusUpdate(topic, payload) {
     // Handle device status updates
-    const status = typeof payload === 'object' ? payload.status : payload.value;
-    const timestamp = typeof payload === 'object' ? payload.timestamp : payload.timestamp;
+    let status, timestamp;
+    if (typeof payload === 'object' && payload !== null) {
+      status = payload.status || payload.value;
+      timestamp = payload.timestamp;
+    } else {
+      status = payload;
+    }
 
-    logger.info(`Device status update: ${topic}`, {
-      status,
-      timestamp
-    });
+    if (!timestamp) {
+      timestamp = Date.now();
+    }
+
   }
 
   handleDataUpdate(topic, payload) {
@@ -183,7 +184,6 @@ class MQTTService {
           logger.error(`Failed to publish to ${topic}:`, error);
           reject(error);
         } else {
-          logger.info(`Published to ${topic}:`, message);
           resolve();
         }
       });

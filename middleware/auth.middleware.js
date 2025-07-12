@@ -22,7 +22,7 @@ export const authenticate = async (req, res, next) => {
 
     try {
       const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-      req.user = decoded;
+      req.user = { userId: decoded.id || decoded.userId, ...decoded };
       next();
     } catch (error) {
       logger.error('Token verification failed:', error);

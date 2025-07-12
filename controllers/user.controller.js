@@ -6,7 +6,7 @@ import { logger } from '../config/logger/config.js';
 // Get user profile
 export const getProfile = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const { userId } = req.user;
 
     if (!userId) {
       return res.status(401).json({
@@ -44,6 +44,9 @@ export const updateProfile = async (req, res) => {
     const { fullName, username, email } = req.body;
     const updates = {};
 
+    // Always fetch current user at the start
+    const currentUser = await User.findById(userId);
+
     // Only update fields that are provided
     if (fullName) updates.fullName = fullName;
     if (username) updates.username = username;
@@ -52,7 +55,6 @@ export const updateProfile = async (req, res) => {
     // Handle avatar upload
     if (req.file) {
       // Delete old avatar if exists
-      const currentUser = await User.findById(userId);
       if (currentUser.avatar && currentUser.avatar.includes('cloudinary')) {
         const publicId = currentUser.avatar.split('/').slice(-1)[0].split('.')[0];
         await deleteImage(publicId);
@@ -104,7 +106,8 @@ export const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
-    const user = await User.findById(userId);
+    // Fetch user with password field
+    const user = await User.findById(userId).select('+password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }

@@ -17,6 +17,8 @@ import { connectToDB } from './config/db.config.js';
 import { mqttService } from './config/mqtt/config.js';
 import { sessionManager } from './config/session-manager/config.js';
 import { dataProcessor } from './config/data-processor/config.js';
+import swaggerUi from 'swagger-ui-express';
+import { specs } from './config/swagger.js';
 
 dotenv.config();
 
@@ -53,7 +55,7 @@ app.use('/api/partnerships', partnershipRouter);
 // Rate limiter configuration
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
+    max: 500, // limit each IP to 100 requests per windowMs
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
     message: 'Too many requests from this IP, please try again later.'
@@ -62,28 +64,64 @@ const limiter = rateLimit({
 // Apply rate limiting to all routes
 app.use(limiter);
 
-// Routes
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        services: {
-            mqtt: mqttService.isConnected,
-            dataProcessor: true,
-            sessionManager: true
-        }
-    });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(err.status || 500).json({
-        message: err.message || 'Internal server error',
-        error: process.env.NODE_ENV === 'development' ? err : {}
-    });
-});
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+    explorer: true,
+    customCss: `
+        .swagger-ui .topbar { display: none }
+        .swagger-ui .info .title { color: #2c3e50; font-size: 2.5em; }
+        .swagger-ui .info .description { font-size: 1.2em; }
+        .swagger-ui .opblock.opblock-post { border-color: #2ecc71; background: rgba(46, 204, 113, 0.1); }
+        .swagger-ui .opblock.opblock-get { border-color: #3498db; background: rgba(52, 152, 219, 0.1); }
+        .swagger-ui .opblock.opblock-put { border-color: #f1c40f; background: rgba(241, 196, 15, 0.1); }
+        .swagger-ui .opblock.opblock-delete { border-color: #e74c3c; background: rgba(231, 76, 60, 0.1); }
+        .swagger-ui .btn.execute { background-color: #2c3e50; }
+        .swagger-ui .btn.execute:hover { background-color: #34495e; }
+        .swagger-ui .scheme-container { background-color: #f8f9fa; }
+        .swagger-ui .info .base-url { font-size: 1.2em; }
+        .swagger-ui .info .title small.version-stamp { background-color: #2c3e50; }
+        .swagger-ui .opblock-tag { font-size: 1.2em; color: #2c3e50; }
+        .swagger-ui .opblock .opblock-summary-method { font-weight: bold; }
+        .swagger-ui .opblock-description-wrapper p { font-size: 1.1em; }
+        .swagger-ui .parameters-container .parameters-col_description { width: 40%; }
+        .swagger-ui .parameters-container .parameters-col_name { width: 20%; }
+        .swagger-ui .parameters-container .parameters-col_type { width: 20%; }
+        .swagger-ui .parameters-container .parameters-col_description input { width: 100%; }
+        .swagger-ui .response-col_status { font-weight: bold; }
+        .swagger-ui .response-col_description { width: 60%; }
+        .swagger-ui .response .response-inner { padding: 1em; }
+        .swagger-ui .response .response-inner .highlight-code { background: #f8f9fa; }
+        .swagger-ui .response .response-inner .highlight-code pre { padding: 1em; }
+        .swagger-ui .response .response-inner .highlight-code code { font-size: 1.1em; }
+        .swagger-ui .response .response-inner .highlight-code code span { font-family: 'Fira Code', monospace; }
+        .swagger-ui .response .response-inner .highlight-code code span.hljs-string { color: #2ecc71; }
+        .swagger-ui .response .response-inner .highlight-code code span.hljs-number { color: #e74c3c; }
+        .swagger-ui .response .response-inner .highlight-code code span.hljs-boolean { color: #f1c40f; }
+        .swagger-ui .response .response-inner .highlight-code code span.hljs-null { color: #95a5a6; }
+        .swagger-ui .response .response-inner .highlight-code code span.hljs-keyword { color: #3498db; }
+        .swagger-ui .response .response-inner .highlight-code code span.hljs-property { color: #9b59b6; }
+    `,
+    customSiteTitle: "Neurolab API Documentation",
+    customfavIcon: "/favicon.ico",
+    swaggerOptions: {
+        persistAuthorization: true,
+        displayRequestDuration: true,
+        filter: true,
+        tryItOutEnabled: true,
+        syntaxHighlight: {
+            activated: true,
+            theme: "monokai"
+        },
+        docExpansion: "list",
+        defaultModelsExpandDepth: 3,
+        defaultModelExpandDepth: 3,
+        displayOperationId: true,
+        showExtensions: true,
+        showCommonExtensions: true,
+        supportedSubmitMethods: ["get", "post", "put", "delete", "patch"],
+        validatorUrl: null
+    }
+}));
 
 const PORT = process.env.PORT || 5000;
 
@@ -94,7 +132,7 @@ async function initializeServices() {
         await connectToDB();
 
         // Initialize MQTT service
-        //await mqttService.initialize();
+        await mqttService.initialize();
 
         // Initialize data processor
         await dataProcessor.initialize();
@@ -103,6 +141,12 @@ async function initializeServices() {
         await sessionManager.initialize();
 
         console.log('✅ All services initialized successfully');
+
+        // Start HTTP server
+        app.listen(PORT, () => {
+            console.log(`✅ Server running on http://localhost:${PORT}`);
+            console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
+        });
     } catch (error) {
         console.error('❌ Service initialization failed:', error);
         process.exit(1);
@@ -110,17 +154,14 @@ async function initializeServices() {
 }
 
 // Start server
-app.listen(PORT, () => {
-    console.log(`✅ Server running on http://localhost:${PORT}`);
-    initializeServices();
-});
+initializeServices();
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
     console.log('🛑 SIGTERM received. Shutting down gracefully...');
 
     try {
-        //await mqttService.shutdown();
+        await mqttService.shutdown();
         await dataProcessor.shutdown();
         await sessionManager.shutdown();
 

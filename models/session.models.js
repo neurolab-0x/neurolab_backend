@@ -72,4 +72,4 @@ sessionSchema.statics.findDeviceSessions = function (deviceId) {
   return this.find({ deviceId }).sort({ startedAt: -1 });
 };
 
-export const Session = mongoose.model('Session', sessionSchema); 
+export const Session = mongoose.model('Session', sessionSchema);
