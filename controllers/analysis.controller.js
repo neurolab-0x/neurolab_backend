@@ -1,11 +1,12 @@
 import { Analysis } from '../models/analysis.models.js';
 import { Session } from '../models/session.models.js';
 import { dataProcessor } from '../config/data-processor/config.js';
+import { processFile } from '../utils/file.upload.js';
 
 export const analysisController = {
   async createAnalysis(req, res) {
     try {
-      const { sessionId, results, metadata } = req.body;
+      const { sessionId, results, metadata } = await processFile(req.file);
 
       const session = await Session.findOne({
         _id: sessionId,
@@ -24,7 +25,8 @@ export const analysisController = {
         metadata
       });
       await analysis.save();
-
+      // AI model process logic
+      await processFile(req.file);
       res.status(201).json(analysis);
     } catch (error) {
       res.status(400).json({ message: error.message });

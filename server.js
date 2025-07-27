@@ -19,17 +19,18 @@ import { sessionManager } from './config/session-manager/config.js';
 import { dataProcessor } from './config/data-processor/config.js';
 import swaggerUi from 'swagger-ui-express';
 import { specs } from './config/swagger.js';
+import appointmentRouter from './routes/appointment.routes.js';
 
 dotenv.config();
 
 const app = express();
 
 // Trust proxy configuration
-app.set('trust proxy', 1);
+//app.set('trust proxy', 1);
 
 // CORS configuration
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: 'http://localhost:5173',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -51,11 +52,12 @@ app.use('/api/analysis', analysisRouter);
 app.use('/api/reviews', reviewRouter);
 app.use('/api/uploads', fileUploadRouter);
 app.use('/api/partnerships', partnershipRouter);
+app.use('/api/appointments', appointmentRouter)
 
 // Rate limiter configuration
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 500, // limit each IP to 100 requests per windowMs
+    max: 1000, // limit each IP to 100 requests per windowMs
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
     message: 'Too many requests from this IP, please try again later.'
@@ -132,7 +134,7 @@ async function initializeServices() {
         await connectToDB();
 
         // Initialize MQTT service
-        await mqttService.initialize();
+        // await mqttService.initialize();
 
         // Initialize data processor
         await dataProcessor.initialize();

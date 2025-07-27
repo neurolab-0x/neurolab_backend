@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyToken, authenticate } from '../middleware/auth.middleware.js';
+import { authenticate } from '../middleware/auth.middleware.js';
 import {
   getProfile,
   updateProfile,
@@ -7,7 +7,6 @@ import {
   deleteAccount
 } from '../controllers/user.controller.js';
 import { uploadAvatar, handleUploadError } from '../utils/image.upload.js';
-import { authorize } from '../middleware/auth.middleware.js';
 
 const userRouter = express.Router();
 

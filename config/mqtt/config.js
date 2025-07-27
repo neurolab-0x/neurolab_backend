@@ -15,7 +15,7 @@ class MQTTService {
         protocol: 'mqtt',
         host: 'broker.hivemq.com',
         port: 1883,
-        url: 'mqtt://broker.hivemq.com:1883'
+        url: "mqtt://broker.hivemq.com:1883"
       },
       auth: {
         username: 'polo',
@@ -106,7 +106,11 @@ class MQTTService {
     const topics = [
       'devices/+/status',
       'devices/+/data',
-      'devices/+/control'
+      'devices/+/control',
+      // User centric topics
+      `user/${userId}/messages`,
+      `user/${userId}/appointments`,
+      `user/${userId}/session`
     ];
 
     topics.forEach(topic => {

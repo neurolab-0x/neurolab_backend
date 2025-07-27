@@ -5,7 +5,7 @@ const generateTokens = (userId) => {
   const accessToken = jwt.sign(
     { userId },
     process.env.ACCESS_TOKEN_SECRET || 'secret321',
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '1d' }
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '15d' }
   );
 
   const refreshToken = jwt.sign(
