@@ -22,7 +22,7 @@ const options = {
         description: 'Development server'
       },
       {
-        url: 'https://api.neurolab.com/api',
+        url: 'https://neurolab-backend.onrender.com/api',
         description: 'Production server'
       }
     ],
