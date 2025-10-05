@@ -1,5 +1,10 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/user.models.js';
+import crypto from 'crypto';
+import { EmailService } from '../service/EmailService.js';
+
+// Initialize email service
+const emailService = new EmailService();
 
 const generateTokens = (userId) => {
   const accessToken = jwt.sign(
@@ -17,53 +22,81 @@ const generateTokens = (userId) => {
   return { accessToken, refreshToken };
 };
 
-export const signup = async (req, res) => {
+export const signup = async (req, res, next) => {
   try {
     const { fullName, username, email, password, avatar, role } = req.body;
 
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
+    // Input validation
     if (!fullName || !username || !email || !password) {
       return res.status(400).json({
+        success: false,
         message: 'Missing required fields',
         required: ['fullName', 'username', 'email', 'password']
       });
     }
 
-    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    const user = await User.create({
-      fullName,
-      username,
-      email,
-      password,
-      role: role ? role : 'USER',
-      avatar: avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fullName)
+    // Check existing user
+    const existingUser = await User.findOne({
+      $or: [
+        { email: email.toLowerCase() },
+        { username: username.toLowerCase() }
+      ]
     });
 
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: existingUser.email === email.toLowerCase() 
+          ? 'Email already registered' 
+          : 'Username already taken'
+      });
+    }
+
+    // Create user
+    const user = await User.create({
+      fullName,
+      username: username.toLowerCase(),
+      email: email.toLowerCase(),
+      password,
+      role: role || 'USER',
+      avatar: avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}`,
+      verificationToken,
+      emailVerified: false
+    });
+
+    // Send verification email
+    try {
+      await emailService.sendVerificationEmail(user);
+    } catch (emailError) {
+      console.error('Verification email failed:', emailError);
+      // Continue with user creation even if email fails
+    }
+
+    // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user._id);
 
-    user.refreshToken = refreshToken;
-    await user.save();
+    // Update user with refresh token
+    await User.findByIdAndUpdate(user._id, {
+      refreshToken: refreshToken
+    });
 
     res.status(201).json({
-      message: 'User created successfully',
-      accessToken,
-      refreshToken,
+      success: true,
+      message: 'Registration successful. Please check your email to verify your account.',
       user: {
         id: user._id,
         fullName: user.fullName,
         username: user.username,
         email: user.email,
         role: user.role
-      }
+      },
+      accessToken,
+      refreshToken
     });
   } catch (error) {
-    res.status(500).json({
-      message: 'Error creating user',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    });
+    next(error); // Pass to error handler middleware
   }
 };
 
@@ -83,6 +116,14 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Check if email is verified
+    if (!user.emailVerified) {
+      return res.status(401).json({ 
+        message: 'Please verify your email before logging in',
+        verificationRequired: true
+      });
+    }
+
     const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {
@@ -99,7 +140,7 @@ export const login = async (req, res) => {
           refreshToken: refreshToken
         }
       },
-      { new: true, runValidators: false }
+      { new: true, runValidators: true }
     );
 
     return res.json({
@@ -150,6 +191,107 @@ export const refresh = async (req, res) => {
   }
 };
 
+export const verifyEmail = async (req, res) => {
+  try {
+      const { token } = req.params;
+      
+      const user = await User.findOne({ verificationToken: token });
+      if (!user) {
+          return res.status(400).json({
+              status: 'error',
+              message: 'Invalid verification token'
+          });
+      }
+
+      user.emailVerified = true;
+      user.verificationToken = undefined;
+      await user.save();
+
+      res.status(200).json({
+          status: 'success',
+          message: 'Email verified successfully'
+      });
+    } catch (error) {
+      res.status(400).json({
+          status: 'error',
+          message: error.message
+      });
+  }
+}
+
+export const requestPasswordReset = async (req, res) => {
+  try {
+      const { email } = req.body;
+      
+      const user = await User.findOne({ email });
+      if (!user) {
+          return res.status(404).json({
+              status: 'error',
+              message: 'User not found'
+          });
+      }
+
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      user.resetPasswordToken = resetToken;
+      user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+      await user.save();
+
+      await this.emailService.sendPasswordResetEmail(user);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Password reset email sent'
+    });
+} catch (error) {
+    res.status(400).json({
+        status: 'error',
+        message: error.message
+    });
+}
+}
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Password reset token is invalid or has expired'
+      });
+    }
+
+    // Set new password
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    // Generate new tokens
+    const { accessToken, refreshToken } = generateTokens(user._id);
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.json({
+      status: 'success',
+      message: 'Password has been reset',
+      accessToken,
+      refreshToken
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
 export const logout = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -161,4 +303,4 @@ export const logout = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error logging out', error: error.message });
   }
-}; 
+};
