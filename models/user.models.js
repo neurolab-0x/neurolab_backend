@@ -8,12 +8,30 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: [true, 'Email is required'], unique: true, lowercase: true, validate: [validator.isEmail, 'Please provide a valid email'] },
   password: { type: String, required: [true, 'Password is required'], minlength: [8, 'Password must be at least 8 characters long'], select: false },
   avatar: { type: String, default: 'default-avatar.png' },
-  role: { type: String, enum: ['USER', 'ADMIN', 'DOCTOR'], default: 'user' },
+  role: { 
+    type: String, 
+    enum: {
+      values: ['USER', 'ADMIN', 'DOCTOR'],
+      message: '{VALUE} is not a valid role'
+    },
+    default: 'USER'
+  },
   isActive: { type: Boolean, default: true },
   lastLogin: { type: Date },
   phone: { type: String, validate: [validator.isMobilePhone, 'Please provide a valid phone number'] },
   address: { street: String, city: String, state: String, country: String, zipCode: String },
-  refreshToken: { type: String, select: false }
+  refreshToken: { type: String, select: false },
+  emailVerified: { type: Boolean, default: false },
+  verificationToken: { 
+    type: String,
+    select: false
+  },
+  resetPasswordToken: { 
+    type: String,
+    select: false
+  },
+  resetPasswordExpires: Date,
+  createdAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 userSchema.index({ role: 1 });

@@ -1,6 +1,6 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { signup, login, refresh, logout } from '../controllers/auth.controller.js';
+import { signup, login, refresh, logout,verifyEmail,requestPasswordReset,resetPassword } from '../controllers/auth.controller.js';
 import { verifyToken } from '../middleware/auth.middleware.js';
 
 const authRouter = express.Router();
@@ -103,5 +103,10 @@ authRouter.post('/register', authLimiter, signup);
 
 authRouter.post('/refresh', refresh);
 authRouter.post('/logout', verifyToken, logout);
+
+// Add these new routes
+authRouter.get('/verify-email/:token', verifyEmail);
+authRouter.post('/request-password-reset', requestPasswordReset);
+authRouter.post('/reset-password/:token', resetPassword);
 
 export default authRouter;
