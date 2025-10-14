@@ -4,7 +4,7 @@ import config from '../config/email.config.js';
 export class EmailService {
     constructor()  {
         this.transporter = nodemailer.createTransport(config.emailConfig);
-        this.verifyConnection();
+        //this.verifyConnection();
     }
 
     async verifyConnection() {
@@ -12,8 +12,7 @@ export class EmailService {
             await this.transporter.verify();
             console.log('Email service connected successfully');
         } catch (error) {
-            console.error('Email service connection failed:', error);
-            throw new Error('Email service configuration error');
+            throw new Error('Email service configuration error', error);
         }
     }
 
