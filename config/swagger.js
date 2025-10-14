@@ -9,7 +9,7 @@ const options = {
       description: 'API documentation for Neurolab Backend - A comprehensive platform for neurological research and analysis',
       contact: {
         name: 'Mugisha Prosper',
-        email: 'contact@neurolab.com'
+        email: 'polo@neurolab.cc'
       },
       license: {
         name: 'ISC',
@@ -18,7 +18,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:5001/api',
+        url: 'http://localhost:5000/api',
         description: 'Development server'
       },
       {
