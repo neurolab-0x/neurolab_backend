@@ -1,7 +1,7 @@
-import User from '../models/user.models.js';
-import bcrypt from 'bcryptjs';
-import { deleteImage, getImageUrl } from '../utils/image.upload.js';
-import { logger } from '../config/logger/config.js';
+import User from "../models/user.models.js";
+import bcrypt from "bcryptjs";
+import { deleteImage, getImageUrl } from "../utils/image.upload.js";
+import { logger } from "../config/logger/config.js";
 
 // Get user profile
 export const getProfile = async (req, res) => {
@@ -10,15 +10,15 @@ export const getProfile = async (req, res) => {
 
     if (!userId) {
       return res.status(401).json({
-        message: 'User ID not found in token'
+        message: "User ID not found in token",
       });
     }
 
-    const user = await User.findById(userId).select('-password -refreshToken');
+    const user = await User.findById(userId).select("-password -refreshToken");
 
     if (!user) {
       return res.status(404).json({
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
@@ -26,13 +26,41 @@ export const getProfile = async (req, res) => {
 
     res.json({
       success: true,
-      user
+      user,
     });
   } catch (error) {
-    logger.error('Error fetching profile:', error);
+    logger.error("Error fetching profile:", error);
     res.status(500).json({
-      message: 'Error fetching profile',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message: "Error fetching profile",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
+    });
+  }
+};
+
+export const getUserById = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const user = await User.findById(userId).select("-password -resetPassword");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not fund",
+      });
+    }
+    logger.info(`User profile fetched for user ${userId}`);
+    return res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    logger.error("Error fetching user profile", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
     });
   }
 };
@@ -55,8 +83,11 @@ export const updateProfile = async (req, res) => {
     // Handle avatar upload
     if (req.file) {
       // Delete old avatar if exists
-      if (currentUser.avatar && currentUser.avatar.includes('cloudinary')) {
-        const publicId = currentUser.avatar.split('/').slice(-1)[0].split('.')[0];
+      if (currentUser.avatar && currentUser.avatar.includes("cloudinary")) {
+        const publicId = currentUser.avatar
+          .split("/")
+          .slice(-1)[0]
+          .split(".")[0];
         await deleteImage(publicId);
       }
       updates.avatar = getImageUrl(req.file);
@@ -67,13 +98,15 @@ export const updateProfile = async (req, res) => {
       const existingUser = await User.findOne({
         $or: [
           { username: username || currentUser.username },
-          { email: email || currentUser.email }
+          { email: email || currentUser.email },
         ],
-        _id: { $ne: userId }
+        _id: { $ne: userId },
       });
 
       if (existingUser) {
-        return res.status(400).json({ message: 'Username or email already taken' });
+        return res
+          .status(400)
+          .json({ message: "Username or email already taken" });
       }
     }
 
@@ -83,20 +116,22 @@ export const updateProfile = async (req, res) => {
       {
         new: true,
         runValidators: true,
-        context: 'query'
+        context: "query",
       }
-    ).select('-password -refreshToken');
+    ).select("-password -refreshToken");
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     res.json({
-      message: 'Profile updated successfully',
-      user
+      message: "Profile updated successfully",
+      user,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error updating profile', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error updating profile", error: error.message });
   }
 };
 
@@ -107,15 +142,15 @@ export const changePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
     // Fetch user with password field
-    const user = await User.findById(userId).select('+password');
+    const user = await User.findById(userId).select("+password");
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Verify current password
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Current password is incorrect' });
+      return res.status(401).json({ message: "Current password is incorrect" });
     }
 
     // Hash new password
@@ -129,9 +164,11 @@ export const changePassword = async (req, res) => {
       { runValidators: false }
     );
 
-    res.json({ message: 'Password changed successfully' });
+    res.json({ message: "Password changed successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Error changing password', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error changing password", error: error.message });
   }
 };
 
@@ -143,24 +180,26 @@ export const deleteAccount = async (req, res) => {
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Verify password before deletion
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Password is incorrect' });
+      return res.status(401).json({ message: "Password is incorrect" });
     }
 
     // Delete avatar from Cloudinary if exists
-    if (user.avatar && user.avatar.includes('cloudinary')) {
-      const publicId = user.avatar.split('/').slice(-1)[0].split('.')[0];
+    if (user.avatar && user.avatar.includes("cloudinary")) {
+      const publicId = user.avatar.split("/").slice(-1)[0].split(".")[0];
       await deleteImage(publicId);
     }
 
     await User.findByIdAndDelete(userId);
-    res.json({ message: 'Account deleted successfully' });
+    res.json({ message: "Account deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting account', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error deleting account", error: error.message });
   }
-}; 
+};
