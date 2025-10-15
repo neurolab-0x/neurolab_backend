@@ -117,12 +117,12 @@ export const login = async (req, res) => {
     }
 
     // Check if email is verified
-    if (!user.emailVerified) {
-      return res.status(401).json({ 
-        message: 'Please verify your email before logging in',
-        verificationRequired: true
-      });
-    }
+    // if (!user.emailVerified) {
+    //   return res.status(401).json({ 
+    //     message: 'Please verify your email before logging in',
+    //     verificationRequired: true
+    //   });
+    // }
 
     const isMatch = await user.comparePassword(password);
 
