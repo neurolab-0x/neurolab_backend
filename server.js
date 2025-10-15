@@ -29,12 +29,12 @@ const app = express();
 //app.set('trust proxy', 1);
 
 app.use(cors({
-    origin : (origin, callback) => {
+    origin: (origin, callback) => {
         return callback(null, true)
     },
-    methods : ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders : ["Content-Type", "Authorization"],
-    credentials : true
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
 }));
 app.use(helmet());
 app.use(express.json());
@@ -65,6 +65,20 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Swagger UI
+// Relax CSP only for /api-docs to allow Swagger inline assets over HTTP
+app.use('/api-docs', helmet.contentSecurityPolicy({
+    useDefaults: true,
+    directives: {
+        "default-src": ["'self'"],
+        "script-src": ["'self'", "'unsafe-inline'"],
+        "style-src": ["'self'", "'unsafe-inline'"],
+        "img-src": ["'self'", 'data:']
+    }
+}));
+
+// Minimal favicon to avoid console errors
+app.get('/favicon.ico', (_req, res) => res.status(204).end());
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
     explorer: true,
     customCss: `
