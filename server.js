@@ -40,6 +40,15 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use('/', (req, res) => {
+    res.json({
+        origin : req.headers.origin,
+        message: 'Neurolab Backend API',
+        version: '1.0.0',
+        status: 'Up and running',
+        documentation : 'https://neurolab-backend.onrender.com/api-docs'
+    });
+});
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
 app.use('/api/admin', adminRouter);
