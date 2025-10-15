@@ -20,6 +20,7 @@ import { dataProcessor } from './config/data-processor/config.js';
 import swaggerUi from 'swagger-ui-express';
 import { specs } from './config/swagger.js';
 import appointmentRouter from './routes/appointment.routes.js';
+import { logger } from './config/logger/config.js';
 
 dotenv.config();
 
@@ -40,7 +41,10 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/', (req, res) => {
+app.get('/', (req, res) => {
+    logger.info("Neurolab Backend API is running", {
+        origin : req.headers.origin,
+    });
     res.json({
         origin : req.headers.origin,
         message: 'Neurolab Backend API',
@@ -75,15 +79,15 @@ app.use(limiter);
 
 // Swagger UI
 // Relax CSP only for /api-docs to allow Swagger inline assets over HTTP
-app.use('/api-docs', helmet.contentSecurityPolicy({
-    useDefaults: true,
-    directives: {
-        "default-src": ["'self'"],
-        "script-src": ["'self'", "'unsafe-inline'"],
-        "style-src": ["'self'", "'unsafe-inline'"],
-        "img-src": ["'self'", 'data:']
-    }
-}));
+// app.use('/api-docs', helmet.contentSecurityPolicy({
+//     useDefaults: true,
+//     directives: {
+//         "default-src": ["'self'"],
+//         "script-src": ["'self'", "'unsafe-inline'"],
+//         "style-src": ["'self'", "'unsafe-inline'"],
+//         "img-src": ["'self'", 'data:']
+//     }
+// }));
 
 // Minimal favicon to avoid console errors
 app.get('/favicon.ico', (_req, res) => res.status(204).end());
