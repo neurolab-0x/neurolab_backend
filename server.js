@@ -43,14 +43,14 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
     logger.info("Neurolab Backend API is running", {
-        origin : req.headers.origin,
+        origin: req.headers.origin,
     });
     res.json({
-        origin : req.headers.origin,
+        origin: req.headers.origin,
         message: 'Neurolab Backend API',
         version: '1.0.0',
         status: 'Up and running',
-        documentation : 'https://neurolab-backend.onrender.com/api-docs'
+        documentation: 'https://neurolab-backend.onrender.com/api-docs'
     });
 });
 app.use('/api/auth', authRouter);
@@ -79,15 +79,20 @@ app.use(limiter);
 
 // Swagger UI
 // Relax CSP only for /api-docs to allow Swagger inline assets over HTTP
-// app.use('/api-docs', helmet.contentSecurityPolicy({
-//     useDefaults: true,
-//     directives: {
-//         "default-src": ["'self'"],
-//         "script-src": ["'self'", "'unsafe-inline'"],
-//         "style-src": ["'self'", "'unsafe-inline'"],
-//         "img-src": ["'self'", 'data:']
-//     }
-// }));
+app.use('/api-docs', helmet.contentSecurityPolicy({
+    useDefaults: true,
+    directives: {
+        "default-src": ["'self'"],
+        "script-src": ["'self'", "'unsafe-inline'"],
+        "style-src": ["'self'", "'unsafe-inline'"],
+        "img-src": ["'self'", 'data:'],
+        "connect-src": [
+            "'self'",
+            'http://13.60.64.187:5000',
+            'http://localhost:5000'
+        ]
+    }
+}));
 
 // Minimal favicon to avoid console errors
 app.get('/favicon.ico', (_req, res) => res.status(204).end());
