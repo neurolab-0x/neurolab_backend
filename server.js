@@ -20,6 +20,7 @@ import { dataProcessor } from './config/data-processor/config.js';
 import swaggerUi from 'swagger-ui-express';
 import { specs } from './config/swagger.js';
 import appointmentRouter from './routes/appointment.routes.js';
+import calendarRouter from './routes/calendar.routes.js';
 import { logger } from './config/logger/config.js';
 
 dotenv.config();
@@ -63,7 +64,8 @@ app.use('/api/analysis', analysisRouter);
 app.use('/api/reviews', reviewRouter);
 app.use('/api/uploads', fileUploadRouter);
 app.use('/api/partnerships', partnershipRouter);
-app.use('/api/appointments', appointmentRouter)
+app.use('/api/appointments', appointmentRouter);
+app.use('/api/calendar', calendarRouter);
 
 // Rate limiter configuration
 const limiter = rateLimit({

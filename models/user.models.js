@@ -31,6 +31,13 @@ const userSchema = new mongoose.Schema({
     select: false
   },
   resetPasswordExpires: Date,
+  calendarTokens: {
+    access_token: String,
+    refresh_token: String,
+    scope: String,
+    token_type: String,
+    expiry_date: Number
+  },
   createdAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
@@ -59,11 +66,13 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 userSchema.methods.getRoleProfile = async function () {
   switch (this.role) {
     case 'ADMIN':
-      return await mongoose.model('ADMIN').findOne({ user: this._id });
+      return await mongoose.model('Admin').findOne({ user: this._id });
     case 'DOCTOR':
-      return await mongoose.model('DOCTOR').findOne({ user: this._id });
+      return await mongoose.model('Doctor').findOne({ user: this._id });
     case 'USER':
-      return await mongoose.model('USER').findOne({ user: this._id });
+      // If you have a separate "Patient" or "UserProfile" model, use it here.
+      // Otherwise, return the user itself or null based on your domain rules.
+      return await mongoose.model('User').findById(this._id);
     default:
       return null;
   }

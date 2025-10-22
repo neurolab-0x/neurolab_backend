@@ -14,7 +14,7 @@ const doctorRouter = express.Router();
 
 // Apply JWT verification and role check middleware to all routes
 doctorRouter.use(verifyToken);
-doctorRouter.use(checkRole('doctor'));
+doctorRouter.use(checkRole('DOCTOR'));
 
 // Profile routes
 doctorRouter.get('/profile', getProfile);

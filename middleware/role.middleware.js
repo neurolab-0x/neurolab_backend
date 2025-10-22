@@ -5,23 +5,30 @@ export const checkRole = (...roles) => {
         return res.status(401).json({ message: 'Authentication required' });
       }
 
-      if (!roles.includes(req.user.role)) {
+      // Normalize roles to uppercase for case-insensitive comparison
+      const requiredRoles = roles.map(r => String(r).toUpperCase());
+      const userRole = String(req.user?.role || '').toUpperCase();
+
+      if (!requiredRoles.includes(userRole)) {
         return res.status(403).json({
-          message: `Access denied. Required roles: ${roles.join(', ')}`
+          message: `Access denied. Required roles: ${requiredRoles.join(', ')}`
         });
       }
 
-      const roleProfile = await req.user.getRoleProfile();
-      if (!roleProfile) {
-        return res.status(403).json({
-          message: 'Role profile not found. Please contact support.'
-        });
+      // Only attempt role profile retrieval if available on req.user
+      if (typeof req.user?.getRoleProfile === 'function') {
+        const roleProfile = await req.user.getRoleProfile();
+        if (!roleProfile) {
+          return res.status(403).json({
+            message: 'Role profile not found. Please contact support.'
+          });
+        }
+        req.roleProfile = roleProfile;
       }
 
-      req.roleProfile = roleProfile;
-      next();
+      return next();
     } catch (error) {
-      next(error);
+      return next(error);
     }
   };
 };
@@ -29,23 +36,30 @@ export const checkRole = (...roles) => {
 export const checkAdminPermission = (...permissions) => {
   return async (req, res, next) => {
     try {
-      if (!req.user || req.user.role !== 'ADMIN') {
+      const userRole = String(req.user?.role || '').toUpperCase();
+      if (!req.user || userRole !== 'ADMIN') {
         return res.status(403).json({ message: 'Admin access required' });
       }
 
-      const hasAllPermissions = await Promise.all(
-        permissions.map(permission => req.user.hasPermission(permission))
-      );
+      let hasAllPermissions = true;
 
-      if (hasAllPermissions.some(hasPermission => !hasPermission)) {
-        return res.status(403).json({
-          message: 'Insufficient permissions'
-        });
+      if (typeof req.user?.hasPermission === 'function') {
+        const checks = await Promise.all(
+          permissions.map(permission => req.user.hasPermission(permission))
+        );
+        hasAllPermissions = checks.every(Boolean);
+      } else {
+        const userPermissions = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
+        hasAllPermissions = permissions.every(p => userPermissions.includes(p));
       }
 
-      next();
+      if (!hasAllPermissions) {
+        return res.status(403).json({ message: 'Insufficient permissions' });
+      }
+
+      return next();
     } catch (error) {
-      next(error);
+      return next(error);
     }
   };
 };
