@@ -14,6 +14,6 @@ const emailConfig = {
 };
 
 export default {
-   emailConfig
-  // appUrl: process.env.APP_URL
+   emailConfig,
+  appUrl: process.env.APP_URL
 };

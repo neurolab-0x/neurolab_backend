@@ -6,15 +6,30 @@ import { EmailService } from '../service/EmailService.js';
 // Initialize email service
 const emailService = new EmailService();
 
-const generateTokens = (userId) => {
+(async () => {
+  try {
+    await emailService.init();
+    console.log('✅ Email service initialized successfully');
+  } catch (error) {
+    console.error('⚠️ Failed to initialize email service:', error);
+  }
+})();
+
+// ✅ Helper: generate access & refresh tokens with role
+const generateTokens = (user) => {
+  const payload = {
+    userId: user._id,
+    role: user.role,
+  };
+
   const accessToken = jwt.sign(
-    { userId },
+    payload,
     process.env.ACCESS_TOKEN_SECRET || 'secret321',
     { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '15d' }
   );
 
   const refreshToken = jwt.sign(
-    { userId },
+    payload,
     process.env.REFRESH_TOKEN_SECRET || 'secret123',
     { expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '1d' }
   );
@@ -22,39 +37,43 @@ const generateTokens = (userId) => {
   return { accessToken, refreshToken };
 };
 
+// ✅ Helper: issue new tokens & update user refresh token
+const issueTokensAndUpdateUser = async (user) => {
+  const { accessToken, refreshToken } = generateTokens(user);
+  user.refreshToken = refreshToken;
+  await user.save();
+  return { accessToken, refreshToken };
+};
+
+// ====================== SIGNUP ======================
 export const signup = async (req, res, next) => {
   try {
     const { fullName, username, email, password, avatar, role } = req.body;
 
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    // Input validation
     if (!fullName || !username || !email || !password) {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields',
-        required: ['fullName', 'username', 'email', 'password']
+        required: ['fullName', 'username', 'email', 'password'],
       });
     }
 
-    // Check existing user
     const existingUser = await User.findOne({
-      $or: [
-        { email: email.toLowerCase() },
-        { username: username.toLowerCase() }
-      ]
+      $or: [{ email: email.toLowerCase() }, { username: username.toLowerCase() }],
     });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: existingUser.email === email.toLowerCase() 
-          ? 'Email already registered' 
-          : 'Username already taken'
+        message:
+          existingUser.email === email.toLowerCase()
+            ? 'Email already registered'
+            : 'Username already taken',
       });
     }
 
-    // Create user
     const user = await User.create({
       fullName,
       username: username.toLowerCase(),
@@ -63,24 +82,16 @@ export const signup = async (req, res, next) => {
       role: role || 'USER',
       avatar: avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}`,
       verificationToken,
-      emailVerified: false
+      emailVerified: false,
     });
 
-    // Send verification email
     try {
       await emailService.sendVerificationEmail(user);
     } catch (emailError) {
-      console.error('Verification email failed:', emailError);
-      // Continue with user creation even if email fails
+      console.error('⚠️ Verification email failed:', emailError);
     }
 
-    // Generate tokens
-    const { accessToken, refreshToken } = generateTokens(user._id);
-
-    // Update user with refresh token
-    await User.findByIdAndUpdate(user._id, {
-      refreshToken: refreshToken
-    });
+    const { accessToken, refreshToken } = await issueTokensAndUpdateUser(user);
 
     res.status(201).json({
       success: true,
@@ -90,60 +101,41 @@ export const signup = async (req, res, next) => {
         fullName: user.fullName,
         username: user.username,
         email: user.email,
-        role: user.role
+        role: user.role,
       },
       accessToken,
-      refreshToken
+      refreshToken,
     });
   } catch (error) {
-    next(error); // Pass to error handler middleware
+    next(error);
   }
 };
 
+// ====================== LOGIN ======================
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({
-        message: 'Email and password are required'
-      });
+      return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    // Check if email is verified
     if (!user.emailVerified) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         message: 'Please verify your email before logging in',
-        verificationRequired: true
+        verificationRequired: true,
       });
     }
 
     const isMatch = await user.comparePassword(password);
+    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+    const { accessToken, refreshToken } = await issueTokensAndUpdateUser(user);
 
-    const { accessToken, refreshToken } = generateTokens(user._id);
-
-    await User.findByIdAndUpdate(
-      user._id,
-      {
-        $set: {
-          lastLogin: new Date(),
-          refreshToken: refreshToken
-        }
-      },
-      { new: true, runValidators: true }
-    );
-
-    return res.json({
+    res.json({
       message: 'Login successful',
       accessToken,
       refreshToken,
@@ -152,23 +144,23 @@ export const login = async (req, res) => {
         fullName: user.fullName,
         username: user.username,
         email: user.email,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
   } catch (error) {
-    return res.status(500).json({
+    res.status(500).json({
       message: 'Error logging in',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
     });
   }
 };
 
+// ====================== REFRESH TOKEN ======================
 export const refresh = async (req, res) => {
   try {
     const { refreshToken } = req.body;
-    if (!refreshToken) {
+    if (!refreshToken)
       return res.status(401).json({ message: 'Refresh token required' });
-    }
 
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     const user = await User.findById(decoded.userId);
@@ -177,79 +169,69 @@ export const refresh = async (req, res) => {
       return res.status(401).json({ message: 'Invalid refresh token' });
     }
 
-    const tokens = generateTokens(user._id);
-
-    user.refreshToken = tokens.refreshToken;
-    await user.save();
-
-    res.json({
-      message: 'Token refreshed successfully',
-      ...tokens
-    });
+    const tokens = await issueTokensAndUpdateUser(user);
+    res.json({ message: 'Token refreshed successfully', ...tokens });
   } catch (error) {
     res.status(401).json({ message: 'Invalid refresh token' });
   }
 };
 
+// ====================== VERIFY EMAIL ======================
 export const verifyEmail = async (req, res) => {
   try {
-      const { token } = req.params;
-      
-      const user = await User.findOne({ verificationToken: token });
-      if (!user) {
-          return res.status(400).json({
-              status: 'error',
-              message: 'Invalid verification token'
-          });
-      }
+    const { token } = req.params;
 
-      user.emailVerified = true;
-      user.verificationToken = undefined;
-      await user.save();
+    const user = await User.findOne({ verificationToken: token });
+    if (!user) {
+      return res.status(400).json({ status: 'error', message: 'Invalid verification token' });
+    }
 
-      res.status(200).json({
-          status: 'success',
-          message: 'Email verified successfully'
-      });
-    } catch (error) {
-      res.status(400).json({
-          status: 'error',
-          message: error.message
-      });
+    user.emailVerified = true;
+    user.verificationToken = undefined;
+    await user.save();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Email verified successfully',
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'error',
+      message: error.message,
+    });
   }
-}
+};
 
+// ====================== PASSWORD RESET REQUEST ======================
 export const requestPasswordReset = async (req, res) => {
   try {
-      const { email } = req.body;
-      
-      const user = await User.findOne({ email });
-      if (!user) {
-          return res.status(404).json({
-              status: 'error',
-              message: 'User not found'
-          });
-      }
+    const { email } = req.body;
 
-      const resetToken = crypto.randomBytes(32).toString('hex');
-      user.resetPasswordToken = resetToken;
-      user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
-      await user.save();
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
 
-      await this.emailService.sendPasswordResetEmail(user);
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
 
-      res.status(200).json({
-        status: 'success',
-        message: 'Password reset email sent'
+    await emailService.sendPasswordResetEmail(user);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Password reset email sent',
     });
-} catch (error) {
+  } catch (error) {
     res.status(400).json({
-        status: 'error',
-        message: error.message
+      status: 'error',
+      message: error.message,
     });
-}
-}
+  }
+};
 
+// ====================== RESET PASSWORD ======================
 export const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
@@ -257,44 +239,40 @@ export const resetPassword = async (req, res) => {
 
     const user = await User.findOne({
       resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }
+      resetPasswordExpires: { $gt: Date.now() },
     });
 
     if (!user) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Password reset token is invalid or has expired'
-      });
+      return res
+        .status(400)
+        .json({ status: 'error', message: 'Password reset token is invalid or expired' });
     }
 
-    // Set new password
     user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
 
-    // Generate new tokens
-    const { accessToken, refreshToken } = generateTokens(user._id);
-    user.refreshToken = refreshToken;
-    await user.save();
+    const { accessToken, refreshToken } = await issueTokensAndUpdateUser(user);
 
     res.json({
       status: 'success',
       message: 'Password has been reset',
       accessToken,
-      refreshToken
+      refreshToken,
     });
   } catch (error) {
     res.status(400).json({
       status: 'error',
-      message: error.message
+      message: error.message,
     });
   }
 };
 
+// ====================== LOGOUT ======================
 export const logout = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.userId);
     if (user) {
       user.refreshToken = null;
       await user.save();
