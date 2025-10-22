@@ -21,6 +21,7 @@ import swaggerUi from 'swagger-ui-express';
 import { specs } from './config/swagger.js';
 import appointmentRouter from './routes/appointment.routes.js';
 import calendarRouter from './routes/calendar.routes.js';
+import { logger } from './config/logger/config.js';
 
 dotenv.config();
 
@@ -29,20 +30,30 @@ const app = express();
 // Trust proxy configuration
 //app.set('trust proxy', 1);
 
-// CORS configuration
-const corsOptions = {
-    origin: 'http://localhost:5173',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    maxAge: 86400
-};
-
-app.use(cors(corsOptions));
+app.use(cors({
+    origin: (origin, callback) => {
+        return callback(null, true)
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
+}));
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.get('/', (req, res) => {
+    logger.info("Neurolab Backend API is running", {
+        origin: req.headers.origin,
+    });
+    res.json({
+        origin: req.headers.origin,
+        message: 'Neurolab Backend API',
+        version: '1.0.0',
+        status: 'Up and running',
+        documentation: 'https://neurolab-backend.onrender.com/api-docs'
+    });
+});
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
 app.use('/api/admin', adminRouter);
@@ -69,6 +80,25 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Swagger UI
+// Relax CSP only for /api-docs to allow Swagger inline assets over HTTP
+app.use('/api-docs', helmet.contentSecurityPolicy({
+    useDefaults: true,
+    directives: {
+        "default-src": ["'self'"],
+        "script-src": ["'self'", "'unsafe-inline'"],
+        "style-src": ["'self'", "'unsafe-inline'"],
+        "img-src": ["'self'", 'data:'],
+        "connect-src": [
+            "'self'",
+            'http://13.60.64.187:5000',
+            'http://localhost:5000'
+        ]
+    }
+}));
+
+// Minimal favicon to avoid console errors
+app.get('/favicon.ico', (_req, res) => res.status(204).end());
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
     explorer: true,
     customCss: `

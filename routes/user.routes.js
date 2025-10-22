@@ -4,7 +4,8 @@ import {
   getProfile,
   updateProfile,
   changePassword,
-  deleteAccount
+  deleteAccount,
+  getUserById
 } from '../controllers/user.controller.js';
 import { uploadAvatar, handleUploadError } from '../utils/image.upload.js';
 
@@ -39,6 +40,8 @@ const userRouter = express.Router();
  *               $ref: '#/components/schemas/Error'
  */
 userRouter.get('/me', authenticate, getProfile);
+
+userRouter.get('/:userId', authenticate, getUserById)
 
 /**
  * @swagger
