@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyToken, checkRole } from '../middleware/auth.middleware.js';
+import { authenticate,authorize } from '../middleware/auth.middleware.js';
 import {
   getAllUsers,
   createAdmin,
@@ -10,8 +10,8 @@ import {
 const adminRouter = express.Router();
 
 // All routes require admin role
-adminRouter.use(verifyToken);
-adminRouter.use(checkRole('admin'));
+adminRouter.use(authenticate);
+adminRouter.use(authorize('admin'));
 
 // Admin routes
 adminRouter.get('/users', getAllUsers);

@@ -35,7 +35,7 @@ export class EmailService {
 
   async sendVerificationEmail(user) {
     try {
-      const verificationLink = `${config.appUrl || 'http://localhost:3000'}/api/auth/verify-email/${user.verificationToken}`;
+      const verificationLink = `${config.appUrl || 'http://localhost:5000'}/api/auth/verify-email/${user.verificationToken}`;
 
       const info = await this.transporter.sendMail({
         from: '"Neurolab" <noreply@neurolab.com>',
@@ -65,7 +65,7 @@ export class EmailService {
 
   async sendPasswordResetEmail(user) {
     try {
-      const resetLink = `${config.appUrl || 'http://localhost:3000'}/api/auth/reset-password/${user.resetPasswordToken}`;
+      const resetLink = `${config.appUrl || 'http://localhost:5000'}/api/auth/reset-password/${user.resetPasswordToken}`;
 
       const info = await this.transporter.sendMail({
         from: '"Neurolab" <noreply@neurolab.com>',

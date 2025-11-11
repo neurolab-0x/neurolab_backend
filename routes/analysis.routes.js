@@ -1,7 +1,6 @@
 import express from 'express';
 import { analysisController } from '../controllers/analysis.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
-import { verifyToken } from '../middleware/auth.middleware.js';
 
 const analysisRouter = express.Router();
 
@@ -122,17 +121,17 @@ const analysisRouter = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-analysisRouter.post('/', verifyToken, analysisController.createAnalysis);
+analysisRouter.post('/', authenticate, analysisController.createAnalysis);
 
 // Apply authentication middleware to all routes
 analysisRouter.use(authenticate);
 
 // Analysis management routes
 analysisRouter.get('/user', analysisController.getUserAnalyses);
-analysisRouter.get('/device/:deviceId', verifyToken, analysisController.getDeviceAnalyses);
+analysisRouter.get('/device/:deviceId', analysisController.getDeviceAnalyses);
 analysisRouter.get('/session/:sessionId', analysisController.getSessionAnalyses);
-analysisRouter.get('/:analysisId', verifyToken, analysisController.getAnalysis);
-analysisRouter.put('/:analysisId/status', verifyToken, analysisController.updateAnalysisStatus);
+analysisRouter.get('/:analysisId', analysisController.getAnalysis);
+analysisRouter.put('/:analysisId/status', analysisController.updateAnalysisStatus);
 
 // Buffer status route
 analysisRouter.get('/device/:deviceId/buffer', analysisController.getBufferStatus);

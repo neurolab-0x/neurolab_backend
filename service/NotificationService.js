@@ -1,16 +1,15 @@
 import { mqttService } from '../config/mqtt/config.js';
 import { EmailService } from './EmailService.js';
 
-const emailService = new EmailService();
-
 export class NotificationService {
-  constructor() {
+  constructor(emailService) {
+    this.emailService = emailService || new EmailService();
     this.init();
   }
 
   async init() {
     try {
-      await emailService.init();
+      await this.emailService.init();
       console.log('Notification service initialized');
     } catch (error) {
       console.error('Failed to initialize notification service:', error);
@@ -131,7 +130,7 @@ export class NotificationService {
         </ul>
       `;
       
-      await emailService.transporter.sendMail({
+      await this.emailService.transporter.sendMail({
         from: '"Neurolab" <noreply@neurolab.com>',
         to: email,
         subject: subject,

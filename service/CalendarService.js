@@ -1,32 +1,23 @@
 import { calendarConfig, createOAuth2Client, createCalendarClient } from '../config/calendar.config.js';
 
-export class CalendarService {
+class CalendarService {
   constructor() {
     this.oAuth2Client = createOAuth2Client();
-    this.calendar = null;
+    this.calendar = createCalendarClient(this.oAuth2Client);
   }
 
+  // Optional: manually update credentials (after OAuth flow)
   setCredentials(tokens) {
     this.oAuth2Client.setCredentials(tokens);
     this.calendar = createCalendarClient(this.oAuth2Client);
   }
 
   async createEvent(appointment) {
-    if (!this.calendar) {
-      throw new Error('Calendar client not initialized');
-    }
-
     const event = {
       summary: `Appointment with ${appointment.doctorName || 'Doctor'}`,
       description: appointment.message || 'Medical appointment',
-      start: {
-        dateTime: appointment.startTime,
-        timeZone: 'UTC',
-      },
-      end: {
-        dateTime: appointment.endTime,
-        timeZone: 'UTC',
-      },
+      start: { dateTime: appointment.startTime, timeZone: 'UTC' },
+      end: { dateTime: appointment.endTime, timeZone: 'UTC' },
       attendees: [
         { email: appointment.userEmail },
         { email: appointment.doctorEmail }
@@ -44,9 +35,9 @@ export class CalendarService {
       const response = await this.calendar.events.insert({
         calendarId: calendarConfig.calendarId || 'primary',
         resource: event,
-        sendNotifications: true
+        sendUpdates: 'all'
       });
-      
+
       return {
         success: true,
         eventId: response.data.id,
@@ -54,13 +45,11 @@ export class CalendarService {
       };
     } catch (error) {
       console.error('Error creating calendar event:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+      return { success: false, error: error.message };
     }
   }
 
+  // You can update and delete events similarly
   async updateEvent(eventId, appointment) {
     if (!this.calendar) {
       throw new Error('Calendar client not initialized');
@@ -121,26 +110,19 @@ export class CalendarService {
       };
     }
   }
-
-  // Generate authorization URL for user to grant calendar access
+  // Generate auth URL for first-time user consent
   getAuthUrl() {
-    const scopes = ['https://www.googleapis.com/auth/calendar'];
     return this.oAuth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: scopes,
+      access_type: 'offline',  // needed to get refresh token
+      scope: ['https://www.googleapis.com/auth/calendar'],
       prompt: 'consent'
     });
   }
 
-  // Exchange authorization code for tokens
   async getTokens(code) {
-    try {
-      const { tokens } = await this.oAuth2Client.getToken(code);
-      return tokens;
-    } catch (error) {
-      console.error('Error getting tokens:', error);
-      throw error;
-    }
+    const { tokens } = await this.oAuth2Client.getToken(code);
+    this.setCredentials(tokens); // auto-set
+    return tokens;
   }
 }
 

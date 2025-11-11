@@ -1,7 +1,6 @@
 import express from 'express';
 import { deviceController } from '../controllers/device.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
-import { verifyToken } from '../middleware/auth.middleware.js';
 
 const deviceRouter = express.Router();
 
@@ -79,7 +78,7 @@ const deviceRouter = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-deviceRouter.post('/', verifyToken, deviceController.createDevice);
+deviceRouter.post('/', authenticate, deviceController.createDevice);
 
 // Apply authentication middleware to all routes
 deviceRouter.use(authenticate);
@@ -124,7 +123,7 @@ deviceRouter.get('/active', deviceController.getActiveDevices);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-deviceRouter.get('/:deviceId', verifyToken, deviceController.getDevice);
+deviceRouter.get('/:deviceId', deviceController.getDevice);
 
 /**
  * @swagger
@@ -177,7 +176,7 @@ deviceRouter.get('/:deviceId', verifyToken, deviceController.getDevice);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-deviceRouter.put('/:deviceId', verifyToken, deviceController.updateDevice);
+deviceRouter.put('/:deviceId', deviceController.updateDevice);
 
 deviceRouter.delete('/:deviceId', deviceController.deleteDevice);
 
@@ -222,7 +221,7 @@ deviceRouter.delete('/:deviceId', deviceController.deleteDevice);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-deviceRouter.get('/:deviceId/status', verifyToken, deviceController.getDeviceStatus);
+deviceRouter.get('/:deviceId/status', deviceController.getDeviceStatus);
 
 /**
  * @swagger
@@ -273,6 +272,6 @@ deviceRouter.get('/:deviceId/status', verifyToken, deviceController.getDeviceSta
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-deviceRouter.post('/:deviceId/assign', verifyToken, deviceController.assignDevice);
+deviceRouter.post('/:deviceId/assign', deviceController.assignDevice);
 
 export default deviceRouter; 

@@ -1,4 +1,5 @@
 import calendarService from '../../service/CalendarService.js';
+import { google } from 'googleapis';
 
 // Mock googleapis
 jest.mock('googleapis', () => {
@@ -34,54 +35,51 @@ describe('CalendarService', () => {
   });
 
   test('createEvent should create a calendar event', async () => {
-    const credentials = { access_token: 'token123' };
     const eventDetails = {
       summary: 'Test Appointment',
-      start: '2023-10-20T10:00:00Z',
-      end: '2023-10-20T11:00:00Z',
-      attendees: ['patient@example.com']
+      start: { dateTime: '2023-10-20T10:00:00Z' },
+      end: { dateTime: '2023-10-20T11:00:00Z' },
+      attendees: [{ email: 'patient@example.com' }]
     };
 
-    const result = await calendarService.createEvent(credentials, eventDetails);
+    const result = await calendarService.createEvent(eventDetails);
 
     expect(result.success).toBe(true);
     expect(result.eventId).toBe('event123');
-    expect(result.eventLink).toBe('https://calendar.google.com/event');
+    expect(result.htmlLink).toBe('https://calendar.google.com/event');
   });
 
   test('updateEvent should update a calendar event', async () => {
-    const credentials = { access_token: 'token123' };
     const eventId = 'event123';
     const eventDetails = {
       summary: 'Updated Appointment',
-      start: '2023-10-21T10:00:00Z',
-      end: '2023-10-21T11:00:00Z'
+      start: { dateTime: '2023-10-21T10:00:00Z' },
+      end: { dateTime: '2023-10-21T11:00:00Z' }
     };
 
-    const result = await calendarService.updateEvent(credentials, eventId, eventDetails);
+    const result = await calendarService.updateEvent(eventId, eventDetails);
 
     expect(result.success).toBe(true);
   });
 
   test('deleteEvent should delete a calendar event', async () => {
-    const credentials = { access_token: 'token123' };
     const eventId = 'event123';
 
-    const result = await calendarService.deleteEvent(credentials, eventId);
+    const result = await calendarService.deleteEvent(eventId);
 
     expect(result.success).toBe(true);
   });
 
-  test('generateAuthUrl should return authorization URL', () => {
-    const result = calendarService.generateAuthUrl();
+  test('getAuthUrl should return authorization URL', () => {
+    const result = calendarService.getAuthUrl();
     
     expect(result).toBe('https://google.com/auth');
   });
 
-  test('exchangeCodeForToken should exchange code for tokens', async () => {
+  test('getTokens should exchange code for tokens', async () => {
     const code = 'auth_code_123';
     
-    const result = await calendarService.exchangeCodeForToken(code);
+    const result = await calendarService.getTokens(code);
     
     expect(result.access_token).toBe('new_token');
   });

@@ -7,13 +7,13 @@ import {
   updatePatientStatus,
   getPatients
 } from '../controllers/doctor.controller.js';
-import { verifyToken } from '../middleware/auth.middleware.js';
+import { authenticate } from '../middleware/auth.middleware.js';
 import { checkRole } from '../middleware/role.middleware.js';
 
 const doctorRouter = express.Router();
 
 // Apply JWT verification and role check middleware to all routes
-doctorRouter.use(verifyToken);
+doctorRouter.use(authenticate);
 doctorRouter.use(checkRole('DOCTOR'));
 
 // Profile routes

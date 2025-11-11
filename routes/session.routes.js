@@ -1,7 +1,6 @@
 import express from 'express';
 import { sessionController } from '../controllers/session.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
-import { verifyToken } from '../middleware/auth.middleware.js';
 
 const sessionRouter = express.Router();
 
@@ -124,7 +123,7 @@ const sessionRouter = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-sessionRouter.post('/', verifyToken, sessionController.createSession);
+sessionRouter.post('/', authenticate, sessionController.createSession);
 
 /**
  * @swagger
@@ -162,7 +161,7 @@ sessionRouter.post('/', verifyToken, sessionController.createSession);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-sessionRouter.post('/:sessionId/end', verifyToken, sessionController.endSession);
+sessionRouter.post('/:sessionId/end',authenticate, sessionController.endSession);
 
 /**
  * @swagger
@@ -224,7 +223,7 @@ sessionRouter.post('/:sessionId/end', verifyToken, sessionController.endSession)
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-sessionRouter.post('/:sessionId/results', verifyToken, sessionController.addAnalysisResult);
+sessionRouter.post('/:sessionId/results', authenticate, sessionController.addAnalysisResult);
 
 /**
  * @swagger
@@ -262,7 +261,7 @@ sessionRouter.post('/:sessionId/results', verifyToken, sessionController.addAnal
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-sessionRouter.get('/:sessionId', verifyToken, sessionController.getSession);
+sessionRouter.get('/:sessionId', authenticate, sessionController.getSession);
 
 // Apply authentication middleware to all routes
 sessionRouter.use(authenticate);

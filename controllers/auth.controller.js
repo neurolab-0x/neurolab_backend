@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/user.models.js';
 import crypto from 'crypto';
 import { EmailService } from '../service/EmailService.js';
+import Doctor from '../models/doctor.models.js';
 
 // Initialize email service
 const emailService = new EmailService();
@@ -48,7 +49,7 @@ const issueTokensAndUpdateUser = async (user) => {
 // ====================== SIGNUP ======================
 export const signup = async (req, res, next) => {
   try {
-    const { fullName, username, email, password, avatar, role } = req.body;
+    const { fullName, username, email, password, role } = req.body;
 
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
@@ -80,10 +81,20 @@ export const signup = async (req, res, next) => {
       email: email.toLowerCase(),
       password,
       role: role || 'USER',
-      avatar: avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}`,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}`,
       verificationToken,
       emailVerified: false,
     });
+
+    if (role.toLowerCase() === 'doctor') {
+      const doctor = await Doctor.create({
+          user: user._id,
+          specialization: req.body.specialization || 'surgeon',
+          licenseNumber: req.body.licenseNumber || 'D123',
+          consultationFee: req.body.consultationFee || 1000,
+      });
+    }
+
 
     try {
       await emailService.sendVerificationEmail(user);

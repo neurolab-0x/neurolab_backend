@@ -1,5 +1,6 @@
 import paymentService from '../../service/PaymentService.js';
 import Stripe from 'stripe';
+import mongoose from 'mongoose';
 
 // Mock Stripe
 jest.mock('stripe', () => {
@@ -13,7 +14,8 @@ jest.mock('stripe', () => {
         retrieve: jest.fn().mockResolvedValue({
           id: 'session_123',
           payment_status: 'paid',
-          customer_details: { email: 'patient@example.com' }
+          customer_details: { email: 'patient@example.com' },
+          client_reference_id: 'appointment123'
         })
       }
     }
@@ -27,13 +29,14 @@ describe('PaymentService', () => {
 
   test('createPaymentSession should create a Stripe checkout session', async () => {
     const appointmentData = {
-      _id: 'appointment123',
+      _id: new mongoose.Types.ObjectId(),
       price: 100,
       startTime: new Date('2023-10-20T10:00:00Z'),
-      doctor: { fullName: 'Dr. Smith' }
     };
+    const user = { _id: new mongoose.Types.ObjectId(), email: 'test@example.com' };
+    const doctor = { _id: new mongoose.Types.ObjectId(), fullName: 'Dr. Smith' };
 
-    const result = await paymentService.createPaymentSession(appointmentData);
+    const result = await paymentService.createPaymentSession(appointmentData, user, doctor);
 
     expect(result.success).toBe(true);
     expect(result.sessionId).toBe('session_123');

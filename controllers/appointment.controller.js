@@ -1,4 +1,5 @@
 import { mqttService } from "../config/mqtt/config.js";
+import { logger } from "../config/logger/config.js";
 import Appointment from "../models/appointment.model.js";
 import Doctor from "../models/doctor.models.js";
 import User from "../models/user.models.js";
@@ -66,14 +67,18 @@ export const AppointmentController = {
             
             // Send notification to doctor
             const notification = `${user.fullName} has requested an appointment with you`;
-            mqttService.publish(`/user/${req.params.doctorId}/appointments`, notification);
-            
+
+            if(mqttService.isConnected){
+                mqttService.publish(`/user/${req.params.doctorId}/appointments`, notification);
+            }else {
+                logger.warn('MQTT service is not connected. Notification not sent.');
+            }
+
             return res.status(200).json({ 
                 message: "Appointment requested",
                 appointmentId: appointment._id
             });
         } catch (error) {
-            console.error(error);
             return res.status(500).json({ message: "Internal server error", error: error.message });
         }
     },
@@ -116,7 +121,6 @@ export const AppointmentController = {
             
             return res.status(200).json({ message: "Appointment accepted" });
         } catch (error) {
-            console.error(error);
             return res.status(500).json({ message: "Internal server error", error: error.message });
         }
     },
@@ -235,7 +239,7 @@ export const AppointmentController = {
             
             // Get user and doctor details
             const user = await User.findById(appointment.user);
-            const doctor = await User.findById(appointment.doctor);
+            const doctor = await Doctor.findById(appointment.doctor);
             
             // Create payment session
             const session = await paymentService.createPaymentSession(appointment, user, doctor);
