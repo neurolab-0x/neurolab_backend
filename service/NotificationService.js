@@ -130,8 +130,7 @@ export class NotificationService {
         </ul>
       `;
       
-      await this.emailService.transporter.sendMail({
-        from: '"Neurolab" <noreply@neurolab.com>',
+      await this.emailService.sendEmail({
         to: email,
         subject: subject,
         html: emailContent

@@ -9,13 +9,6 @@ jest.mock('../../config/mqtt/config.js', () => ({
   }
 }));
 
-jest.mock('../../service/EmailService.js', () => ({
-  EmailService: jest.fn().mockImplementation(() => ({
-    init: jest.fn(),
-    sendEmail: jest.fn().mockResolvedValue({ success: true })
-  }))
-}));
-
 describe('NotificationService', () => {
   let notificationService;
   let emailService;

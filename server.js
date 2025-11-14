@@ -13,6 +13,7 @@ import analysisRouter from './routes/analysis.routes.js';
 import reviewRouter from './routes/review.routes.js';
 import partnershipRouter from './routes/partnership.routes.js';
 import fileUploadRouter from './routes/fileUpload.routes.js';
+import notificationRouter from './routes/notification.routes.js';
 import { connectToDB } from './config/db.config.js';
 import { mqttService } from './config/mqtt/config.js';
 import { sessionManager } from './config/session-manager/config.js';
@@ -66,6 +67,7 @@ app.use('/api/uploads', fileUploadRouter);
 app.use('/api/partnerships', partnershipRouter);
 app.use('/api/appointments', appointmentRouter);
 app.use('/api/calendar', calendarRouter);
+app.use('/api/notifications', notificationRouter);
 
 // Rate limiter configuration
 const limiter = rateLimit({
